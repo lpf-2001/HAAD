@@ -1,0 +1,70 @@
+nohup: ignoring input
+Current path: /home/xuke/xrt/minipatch
+==> Loading DF model...
+==> Loading AWF test data...
+Load dataset: awf2_small200.npz
+Data shape: (20188, 5000, 1)
+==> Start perturbing websites...
+Perturbing all traces (20188)...
+Trial 1 - patches: 8 - bounds: 32	Result: [213, 21, 789, 27, 90, 23, 20, -29, 1340, 29, 3048, 26, 379, 20, 525, 26]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (1199) - time: 12828.72s
+Trial 2 - patches: 8 - bounds: 16	Result: [2133, -16, 1746, 12, 1441, 9, 39, 12, 531, 14, 143, 16, 76, 16, 252, 11]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (1182) - time: 12500.92s
+Trial 3 - patches: 4 - bounds: 32	Result: [1333, 30, 341, 31, 730, 30, 48, 29]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (580) - time: 4050.48s
+Trial 4 - patches: 8 - bounds: 8	Result: [1897, 1, 2891, 8, 30, 8, 2495, -8, 2756, 7, 715, 5, 61, 8, 1663, 5]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (1063) - time: 10345.69s
+Trial 5 - patches: 4 - bounds: 16	Result: [176, 16, 38, 16, 241, 10, 360, 14]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (562) - time: 3777.23s
+Trial 6 - patches: 2 - bounds: 32	Result: [35, 21, 193, 31]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (276) - time: 1296.91s
+Trial 7 - patches: 8 - bounds: 4	Result: [111, 4, 1139, 2, 1527, 2, 2, 1, 1079, -3, 52, 4, 2126, 2, 2553, -3]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (1029) - time: 15344.67s
+Trial 8 - patches: 4 - bounds: 8	Result: [2153, 6, 885, 8, 2733, -1, 49, 8]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (499) - time: 6275.21s
+Trial 9 - patches: 2 - bounds: 16	Result: [13, -16, 2846, -3]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (256) - time: 2282.65s
+Trial 10 - patches: 1 - bounds: 32	Result: [354, 27]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (136) - time: 956.73s
+Trial 11 - patches: 8 - bounds: 2	Result: [2717, -1, 1635, 0, 61, 2, 1291, 1, 708, 2, 2776, 1, 1338, 1, 1232, 2]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (1012) - time: 9839.72s
+Trial 12 - patches: 4 - bounds: 4	Result: [355, 0, 312, -3, 1469, -3, 5, 4]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (517) - time: 2962.69s
+Trial 13 - patches: 2 - bounds: 8	Result: [46, 6, 524, -5]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (261) - time: 1128.29s
+Trial 14 - patches: 1 - bounds: 16	Result: [58, 15]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (142) - time: 485.64s
+Trial 15 - patches: 8 - bounds: 1	Result: [794, 1, 974, 0, 18, 1, 1887, 0, 173, -1, 2218, 1, 2882, 0, 1830, 0]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (1029) - time: 7344.54s
+Trial 16 - patches: 4 - bounds: 2	Result: [4, 1, 1276, -2, 1542, -1, 1926, 0]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (544) - time: 2858.35s
+Trial 17 - patches: 2 - bounds: 4	Result: [2223, -2, 91, 4]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (256) - time: 1042.43s
+Trial 18 - patches: 1 - bounds: 8	Result: [51, 6]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (133) - time: 427.75s
+Trial 19 - patches: 4 - bounds: 1	Result: [599, 0, 5, 1, 1624, 0, 291, -1]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (517) - time: 2425.27s
+Trial 20 - patches: 2 - bounds: 2	Result: [14, 2, 3081, 2]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (266) - time: 1046.50s
+Trial 21 - patches: 1 - bounds: 4	Result: [85, 4]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (133) - time: 437.67s
+Trial 22 - patches: 2 - bounds: 1	Result: [803, 1, 529, 0]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (256) - time: 911.53s
+Trial 23 - patches: 1 - bounds: 2	Result: [60, 2]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (133) - time: 405.75s
+Trial 24 - patches: 1 - bounds: 1	Result: [781, 1]
+Succeeded - rate: 100.00% (20188/20188) - iter: 30 (127) - time: 362.08s
+==> Loading DF model...
+==> Loading AWF valid data...
+Load dataset: awf2_remain_small200and100.npz
+Data shape: (11330, 5000, 1)
+==> Start verifying perturbation...
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 8176.03it/s]
+Traceback (most recent call last):
+  File "minipatch.py", line 528, in <module>
+    verify_perturb(model, traces, labels, verbose, result_file)
+  File "/home/xuke/xrt/minipatch/perturb_utils.py", line 129, in verify_perturb
+    pred = model.predict(traces).argmax(axis=-1)
+  File "/home/xuke/.local/lib/python3.8/site-packages/tensorflow/python/keras/engine/training.py", line 1644, in predict
+    raise ValueError('Expect x to be a non-empty array or dataset.')
+ValueError: Expect x to be a non-empty array or dataset.
