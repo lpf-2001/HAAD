@@ -28,12 +28,12 @@ verify_data = None      # [None '3d' '10d' '2w' '4w' '6w']
 verbose = 1             # [0 1 2]
 
 # Hyperparameters for patch generation
-patches = 8             # [1 2 4 8]
+patches = 5             # [1 2 4 8]
 inbound = 0            # [0 1 2 ... 64]
 outbound = 6           # [0 1 2 ... 64]
 adaptive = True         # [True False]
 maxiter = 30            # [30 40 ... 100]
-maxquery = 1e7          # [1e1 1e2 ... 1e7]
+maxquery = 1e5         # [1e1 1e2 ... 1e7]
 threshold = 1           # [0.9 0.91 ... 1.0]
 polish = True           # [True False]
 

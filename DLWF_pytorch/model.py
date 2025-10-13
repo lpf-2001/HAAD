@@ -523,3 +523,57 @@ class DFNet(nn.Module):
 
 
 
+class AWFNet(nn.Module):
+    def __init__(self, num_classes=100):
+        super(AWFNet, self).__init__()
+        dropout = 0.1
+        filters = 32
+        kernel_size = 5
+        stride_size = 1
+        pool_size = 4
+
+        # 对应 Keras Dropout(input_shape=input_shape)
+        # 输入: (batch, 1, 200)
+        self.dropout = nn.Dropout(p=dropout)
+
+        # Block 1
+        self.block1_conv = nn.Conv1d(in_channels=1, out_channels=filters,
+                                     kernel_size=kernel_size, stride=stride_size, padding=0)
+        self.block1_pool = nn.MaxPool1d(kernel_size=pool_size, stride=pool_size)
+
+        # Block 2
+        self.block2_conv = nn.Conv1d(in_channels=filters, out_channels=filters,
+                                     kernel_size=kernel_size, stride=stride_size, padding=0)
+        self.block2_pool = nn.MaxPool1d(kernel_size=pool_size, stride=pool_size)
+
+        # Block 3
+        self.block3_conv = nn.Conv1d(in_channels=filters, out_channels=filters,
+                                     kernel_size=kernel_size, stride=stride_size, padding=0)
+        self.block3_pool = nn.MaxPool1d(kernel_size=pool_size, stride=pool_size)
+
+        # Flatten + Dense
+        # 计算 flatten 后的特征维度
+        self._out_dim = self._get_flatten_dim()
+        self.fc = nn.Linear(self._out_dim, num_classes)
+
+    def _get_flatten_dim(self):
+        """通过一次前向传播确定 flatten 维度"""
+        with torch.no_grad():
+            x = torch.zeros(1, 1, 200)  # (batch=1, channel=1, length=200)
+            x = self.block1_pool(F.relu(self.block1_conv(self.dropout(x))))
+            x = self.block2_pool(F.relu(self.block2_conv(x)))
+            x = self.block3_pool(F.relu(self.block3_conv(x)))
+            return x.numel()
+
+    def forward(self, x):
+        # 输入: (batch, 200, 1) → 转为 (batch, 1, 200)
+        if x.shape[1] == 200:
+            x = x.permute(0, 2, 1)
+
+        x = self.dropout(x)
+        x = self.block1_pool(F.relu(self.block1_conv(x)))
+        x = self.block2_pool(F.relu(self.block2_conv(x)))
+        x = self.block3_pool(F.relu(self.block3_conv(x)))
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
