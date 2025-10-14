@@ -79,7 +79,7 @@ def build_model_instance(model_type, num_classes, config):
     elif model_type == "varcnn":
         return VarCNN(200, num_classes)
     elif model_type == "lstm":
-        mp = config['model_param']
+        mp = config['lstm']['model_param']
         return Tor_lstm(
             input_size=mp.as_int('input_size'),
             hidden_size=mp.as_int('hidden_size'),
@@ -105,10 +105,12 @@ def build_model_instance(model_type, num_classes, config):
         learn_params = config["sdae"]
         layers = [learn_params[str(x)] for x in range(1, learn_params.as_int('nb_layers') + 1)]
         learn_params['layers'] = layers
-        model3 = build_model(
-            learn_params=learn_params, train_gen=None, test_gen=None,
-            steps=learn_params.as_int('batch_size'), nb_classes=num_classes
-        )
+        #不采用SDAE
+        # model3 = build_model(
+        #     learn_params=learn_params, train_gen=train_loader, test_gen=None,
+        #     steps=learn_params.as_int('batch_size'), nb_classes=num_classes
+        # )
+        model3 = AWFNet(num_classes=num_classes)
         return Tor_ensemble_model(model1, model2, model3, num_classes=num_classes)
     elif model_type == "awf":
         return AWFNet(num_classes=num_classes)
@@ -221,7 +223,7 @@ def train(model, learn_param, data_name, model_name, num_classes):
             # === 模型保存 ===
             if f1 > best_f1:
                 best_f1 = f1
-                save_path = f"../utils/trained_model/{data_name}{num_classes}/{data_name}/{model_name}_best.pkl"
+                save_path = f"../utils/trained_model/{data_name}{num_classes}/{data_name}/{model_name}.pkl"
                 os.makedirs(os.path.dirname(save_path), exist_ok=True)
                 torch.save(model.state_dict(), save_path)
                 print(colored(f"💾 New best model saved! F1={f1:.3f}", "green"))
@@ -293,7 +295,7 @@ def analyze_model_performance(model, dataloader, dataset_name, model_name,
     # === 4️⃣ 输出报告 ===
     report = (
         f"\n📊 ====== Model Performance Summary ======\n"
-        f"📁 Dataset: {dataset_name}\n"
+        f"📁 Dataset: {dataset_name}{num_classes}\n"
         f"🧠 Model: {model_name}\n"
         f"-------------------------------------------\n"
         f"🔢 Trainable Params: {num_params:,}\n"

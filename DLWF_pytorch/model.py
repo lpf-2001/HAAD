@@ -261,7 +261,7 @@ class Tor_ensemble_model(nn.Module):
         # 检查输入张量的维度
         if input_tensor.dim() != 2:
             raise ValueError("Input tensor should be 2-dimensional.")
-        print(f"input shape:{input_tensor.shape}")
+        # print(f"input shape:{input_tensor.shape}")
         batch_size = input_tensor.shape[0]
         # 应用全连接层并求和
         weighted_sum = torch.sum(fc_layer(input_tensor), dim=0)
@@ -527,10 +527,10 @@ class AWFNet(nn.Module):
     def __init__(self, num_classes=100):
         super(AWFNet, self).__init__()
         dropout = 0.1
-        filters = 32
+        filters = 64
         kernel_size = 5
         stride_size = 1
-        pool_size = 4
+        pool_size = 2
 
         # 对应 Keras Dropout(input_shape=input_shape)
         # 输入: (batch, 1, 200)
