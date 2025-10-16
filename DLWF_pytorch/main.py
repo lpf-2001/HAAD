@@ -110,7 +110,7 @@ def build_model_instance(model_type, num_classes, config):
         #     learn_params=learn_params, train_gen=train_loader, test_gen=None,
         #     steps=learn_params.as_int('batch_size'), nb_classes=num_classes
         # )
-        model3 = AWFNet(num_classes=num_classes)
+        model3 = DFNet(num_classes=num_classes)
         return Tor_ensemble_model(model1, model2, model3, num_classes=num_classes)
     elif model_type == "awf":
         return AWFNet(num_classes=num_classes)
@@ -223,7 +223,7 @@ def train(model, learn_param, data_name, model_name, num_classes):
             # === 模型保存 ===
             if f1 > best_f1:
                 best_f1 = f1
-                save_path = f"../utils/trained_model/{data_name}{num_classes}/{data_name}/{model_name}.pkl"
+                save_path = f"../utils/trained_model/{data_name}{num_classes}/{model_name}.pkl"
                 os.makedirs(os.path.dirname(save_path), exist_ok=True)
                 torch.save(model.state_dict(), save_path)
                 print(colored(f"💾 New best model saved! F1={f1:.3f}", "green"))

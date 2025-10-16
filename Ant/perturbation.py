@@ -69,6 +69,54 @@ def eval_on_test(V_model, test_loader, top_patches, device, generate_adv_trace_f
     
     return acc_before, acc_after, total_cost
 
+# ==========================================
+# 模型构建
+# ==========================================
+def build_model_instance(model_type, num_classes, config):
+    if model_type == "cnn":
+        return Tor_cnn(200, num_classes)
+    elif model_type == "df":
+        return DFNet(num_classes)
+    elif model_type == "varcnn":
+        return VarCNN(200, num_classes)
+    elif model_type == "lstm":
+        mp = config['lstm']['model_param']
+        return Tor_lstm(
+            input_size=mp.as_int('input_size'),
+            hidden_size=mp.as_int('hidden_size'),
+            num_layers=mp.as_int('num_layers'),
+            num_classes=num_classes
+        )
+    elif model_type == "sdae":
+        layers = [config[str(i)] for i in range(1, config.as_int('nb_layers') + 1)]
+        config['layers'] = layers
+        return build_model(
+            learn_params=config, train_gen=None, test_gen=None,
+            steps=config.as_int('batch_size'), nb_classes=num_classes
+        )
+    elif model_type == "ensemble":
+        model1 = VarCNN(200, num_classes)
+        mp = config["lstm"]['model_param']
+        model2 = Tor_lstm(
+            input_size=mp.as_int('input_size'),
+            hidden_size=mp.as_int('hidden_size'),
+            num_layers=mp.as_int('num_layers'),
+            num_classes=num_classes
+        )
+        learn_params = config["sdae"]
+        layers = [learn_params[str(x)] for x in range(1, learn_params.as_int('nb_layers') + 1)]
+        learn_params['layers'] = layers
+        #不采用SDAE
+        # model3 = build_model(
+        #     learn_params=learn_params, train_gen=train_loader, test_gen=None,
+        #     steps=learn_params.as_int('batch_size'), nb_classes=num_classes
+        # )
+        model3 = AWFNet(num_classes=num_classes)
+        return Tor_ensemble_model(model1, model2, model3, num_classes=num_classes)
+    elif model_type == "awf":
+        return AWFNet(num_classes=num_classes)
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
 
 # ============================================================
 #   主函数入口
@@ -76,7 +124,7 @@ def eval_on_test(V_model, test_loader, top_patches, device, generate_adv_trace_f
 def main(base_patch_nums = 8):
     dirname = os.path.dirname(os.path.abspath(__file__))
     print(dirname)
-
+    
     torch.cuda.empty_cache()
     os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -118,9 +166,13 @@ def main(base_patch_nums = 8):
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # ------------------- 模型加载 -------------------
-    S_model = torch.load(dirname + f'/../utils/trained_model/{dataset}/{s_model}.pkl')
+    S_model = build_model_instance(s_model, num_classes, config).to(device)
+    S_model.load_state_dict(torch.load(dirname + f'/../utils/trained_model/{dataset}/{s_model}.pkl'))
+    
     S_model.eval()
-    V_model = torch.load(dirname + f'/../utils/trained_model/{dataset}/{v_model}.pkl')
+    
+    V_model = build_model_instance(v_model, num_classes, config).to(device)
+    V_model.load_state_dict(torch.load(dirname + f'/../utils/trained_model/{dataset}/{v_model}.pkl'))
     V_model.eval()
 
     # ------------------- 收集HAAD结果 -------------------
@@ -248,5 +300,9 @@ if __name__ == "__main__":
     s_model = args.model
     v_model = args.verifi_model
     dataset = args.dataset
+    config = ConfigObj("../DLWF_pytorch/My_tor.conf")
+    
+
+    
     for i in range(4,10):
         main(i)

@@ -227,9 +227,8 @@ def make_layer(i, layer,  train_loader, test_loader, steps=0, gen=False):
 
     return train_loader, test_loader, weights
 
-def build_model(learn_params, train_gen, test_gen, steps=0, pre_train=True):
+def build_model(learn_params, train_gen, test_gen, steps=0, pre_train=True, nb_classes=95):
     layers = learn_params["layers"]
-    nb_classes = 95
     sae = StackedAutoencoder(layers,nb_classes=nb_classes).to(device)
     
     if pre_train:
@@ -242,11 +241,11 @@ def build_model(learn_params, train_gen, test_gen, steps=0, pre_train=True):
     return sae
 
 class Tor_ensemble_model(nn.Module):
-    def __init__(self,model1,model2,model3):
+    def __init__(self,model1,model2,model3, num_classes=95):
         super(Tor_ensemble_model, self).__init__()
-        self.fc1 = nn.Linear(in_features=95, out_features=95, bias=False)
-        self.fc2 = nn.Linear(in_features=95, out_features=95, bias=False)
-        self.fc3 = nn.Linear(in_features=95, out_features=95, bias=False)
+        self.fc1 = nn.Linear(in_features=num_classes, out_features=num_classes, bias=False)
+        self.fc2 = nn.Linear(in_features=num_classes, out_features=num_classes, bias=False)
+        self.fc3 = nn.Linear(in_features=num_classes, out_features=num_classes, bias=False)
         self.dropout = nn.Dropout(0.1)
         self.model1 = model1
         self.model2 = model2
@@ -262,6 +261,7 @@ class Tor_ensemble_model(nn.Module):
         # 检查输入张量的维度
         if input_tensor.dim() != 2:
             raise ValueError("Input tensor should be 2-dimensional.")
+        # print(f"input shape:{input_tensor.shape}")
         batch_size = input_tensor.shape[0]
         # 应用全连接层并求和
         weighted_sum = torch.sum(fc_layer(input_tensor), dim=0)
@@ -519,14 +519,18 @@ class DFNet(nn.Module):
         x = self.fc3(x)
         return x
 
+
+
+
+
 class AWFNet(nn.Module):
     def __init__(self, num_classes=100):
         super(AWFNet, self).__init__()
         dropout = 0.1
-        filters = 32
+        filters = 64
         kernel_size = 5
         stride_size = 1
-        pool_size = 4
+        pool_size = 2
 
         # 对应 Keras Dropout(input_shape=input_shape)
         # 输入: (batch, 1, 200)
@@ -572,9 +576,4 @@ class AWFNet(nn.Module):
         x = self.block3_pool(F.relu(self.block3_conv(x)))
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-        x = F.softmax(x, dim=1)
         return x
-
-
-
-

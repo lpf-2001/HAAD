@@ -5,56 +5,20 @@ import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-# ============================================================
-# 扰动插入函数
-# ============================================================
-def generate_adv_trace(perturbations: torch.Tensor, traces: torch.Tensor) -> torch.Tensor:
-    """在 traces 中插入对抗扰动"""
-    if perturbations.numel() == 0:
-        return traces
-
-    perturbations = perturbations.to(traces.device)
-    insert_loc = torch.argsort(perturbations[:, 0].cpu()).to(perturbations.device)
-    perturbations = perturbations[insert_loc]
-
-    insert_positions = perturbations[:, 0].long()
-    insert_counts = perturbations[:, 1].long()
-    total_insert = insert_counts.sum().item()
-    if total_insert == 0:
-        return traces
-
-    B, seq_len, _ = traces.shape
-    new_traces = torch.zeros((B, seq_len + total_insert, 1), device=traces.device)
-
-    prev_pos, offset = 0, 0
-    for i in range(len(insert_positions)):
-        pos, num_insert = insert_positions[i].item(), insert_counts[i].item()
-        new_traces[:, prev_pos+offset:pos+offset, :] = traces[:, prev_pos:pos, :]
-        insert_val = traces[:, pos if pos < seq_len else -1, :]
-        new_traces[:, pos+offset:pos+offset+num_insert, :] = insert_val.unsqueeze(1).expand(-1, num_insert, -1)
-        prev_pos, offset = pos, offset + num_insert
-    new_traces[:, prev_pos+offset:, :] = traces[:, prev_pos:, :]
-
-    return new_traces[:, :seq_len, :]
-
-
 class HAAD:
     """
-    简化的混合蚁群优化 - 离散信息素 + 连续高斯采样
+    改进版HAAD - 解耦信息素设计
     
-    核心功能:
-    1. 从历史优质解构建高斯混合分布
-    2. 混合采样：部分从连续分布，部分从信息素
-    3. 自适应带宽调整
+    核心改进:
+    1. 位置信息素和数量信息素分离
+    2. 信息素更新时考虑邻域扩散
+    3. 统一的采样机制
     """
     def __init__(self, model: nn.Module, num_ants: int, max_insert: int = 6,
                  patches: int = 8, max_iters: int = 10,
                  rho: float = 0.1, gamma: float = 0.35,
                  local_trials: int = 30, epsilon: float = 0.1,
-                 # 连续域参数
-                 continuous_ratio: float = 0.3,
-                 gaussian_bandwidth: float = 5.0,
+                 diffusion_radius: int = 5,  # 新增: 信息素扩散半径
                  device=device):
         self.model = model.to(device)
         self.num_ants = num_ants
@@ -65,101 +29,57 @@ class HAAD:
         self.gamma = gamma
         self.local_trials = local_trials
         self.epsilon = epsilon
+        self.diffusion_radius = diffusion_radius
         self.device = device
         
-        # 连续域参数
-        self.continuous_ratio = continuous_ratio
-        self.gaussian_bandwidth = gaussian_bandwidth
-        
-        # 优质位置历史（用于构建连续分布）
-        self.good_positions = []  # 存储 (position, score) 列表
+        # 历史最优解
+        self.best_history = []  # 存储 (solution, score)
 
-    def _sample_from_gaussian_mixture(self, seq_len, n_samples):
-        """
-        从历史优质位置构建的高斯混合分布中采样
-        
-        返回: [n_samples] 的位置tensor
-        """
-        if len(self.good_positions) == 0:
-            # 没有历史，均匀随机采样
-            return torch.randint(0, seq_len, (n_samples,))
-        
-        # 提取位置和分数
-        positions = torch.tensor([p for p, _ in self.good_positions], dtype=torch.float32)
-        scores = torch.tensor([s for _, s in self.good_positions], dtype=torch.float32)
-        
-        # 分数归一化为权重
-        weights = F.softmax(scores / (scores.std() + 1e-6), dim=0)
-        
-        # 自适应带宽：根据位置分布调整
-        pos_std = positions.std().item()
-        bandwidth = max(2.0, pos_std * 0.3)  # 至少为2
-        
-        # 采样：选择中心 + 高斯噪声
-        centers_idx = torch.multinomial(weights, n_samples, replacement=True)
-        centers = positions[centers_idx]
-        noise = torch.randn(n_samples) * bandwidth
-        sampled = centers + noise
-        
-        # 截断到有效范围
-        sampled = torch.clamp(sampled, 0, seq_len - 1).long()
-        return sampled
+    def _create_diffusion_kernel(self, radius):
+        """创建高斯扩散核"""
+        x = torch.arange(-radius, radius + 1, dtype=torch.float32)
+        kernel = torch.exp(-x**2 / (2 * (radius/2)**2))
+        return kernel / kernel.sum()
 
-    def sample_paths(self, pheromone: torch.Tensor, epsilon: float = None):
+    def sample_paths(self, pos_pheromone, count_pheromone, epsilon=None):
         """
-        混合采样：连续 + 离散
+        分离采样策略
         
         参数:
-            pheromone: [seq_len, max_insert+1]
+            pos_pheromone: [seq_len] 位置信息素
+            count_pheromone: [max_insert+1] 数量信息素
             epsilon: 探索率
-        返回:
-            [patches, 2] tensor
         """
         if epsilon is None:
             epsilon = self.epsilon
         
-        seq_len = pheromone.size(0)
-        n_continuous = int(self.patches * self.continuous_ratio)
-        n_discrete = self.patches - n_continuous
-        
+        seq_len = pos_pheromone.size(0)
         positions = []
         counts = []
         
-        # === 连续采样 ===
-        if n_continuous > 0:
-            cont_positions = self._sample_from_gaussian_mixture(seq_len, n_continuous)
-            for pos in cont_positions:
-                pos_int = int(pos.item())
-                # 从信息素中采样插入数量
-                count_prob = pheromone[pos_int, :]
-                count_prob = count_prob / (count_prob.sum() + 1e-12)
-                count = torch.multinomial(count_prob, 1).item()
-                positions.append(pos_int)
-                counts.append(count)
+        # === 采样位置 ===
+        pos_prob = pos_pheromone.clone()
+        pos_prob = pos_prob / (pos_prob.sum() + 1e-12)
         
-        # === 离散采样 ===
-        if n_discrete > 0:
-            prob = pheromone.view(-1)
-            prob = prob / (prob.sum() + 1e-12)
-            
-            # epsilon-greedy
-            uniform = torch.ones_like(prob) / prob.numel()
-            prob = (1 - epsilon) * prob + epsilon * uniform
-            
-            # 避免重复
-            used = set(positions)
-            mask = torch.ones_like(prob, dtype=torch.bool)
-            for p in used:
-                mask[p * pheromone.size(1):(p + 1) * pheromone.size(1)] = False
-            
-            if mask.sum() > 0:
-                masked_prob = prob.clone()
-                masked_prob[~mask] = 0
-                masked_prob = masked_prob / (masked_prob.sum() + 1e-12)
-                
-                idx = torch.multinomial(masked_prob, min(n_discrete, mask.sum()), replacement=False)
-                positions.extend((idx // pheromone.size(1)).tolist())
-                counts.extend((idx % pheromone.size(1)).tolist())
+        # epsilon-greedy
+        uniform_pos = torch.ones_like(pos_prob) / seq_len
+        pos_prob = (1 - epsilon) * pos_prob + epsilon * uniform_pos
+        
+        # 无放回采样patches个位置
+        sampled_positions = torch.multinomial(pos_prob, self.patches, replacement=False)
+        positions = sampled_positions.tolist()
+        
+        # === 采样数量 ===
+        count_prob = count_pheromone.clone()
+        count_prob = count_prob / (count_prob.sum() + 1e-12)
+        
+        uniform_count = torch.ones_like(count_prob) / (self.max_insert + 1)
+        count_prob = (1 - epsilon) * count_prob + epsilon * uniform_count
+        
+        # 为每个位置独立采样数量
+        for _ in range(self.patches):
+            count = torch.multinomial(count_prob, 1).item()
+            counts.append(count)
         
         return torch.tensor([[p, c] for p, c in zip(positions, counts)], dtype=torch.long)
 
@@ -193,85 +113,125 @@ class HAAD:
                 total += (preds.argmax(-1) != chunk_y.argmax(-1)).sum().item()
         return total
 
-    def local_search(self, base, traces, labels, max_trials_per_pos=10, chunk_size=64):
-        """对每个位置依次进行局部搜索"""
+    def local_search_parallel(self, base, traces, labels, chunk_size=64):
+        """并行局部搜索 - 评估所有邻域"""
         best = base.clone().cpu()
         best_score = self._eval_single(best.to(self.device), traces, labels, chunk_size)
         seq_len = traces.size(1)
         
-        # 对每个patch位置进行局部搜索
-        for patch_idx in range(len(best)):
-            improved = True
-            trial = 0
+        improved = True
+        while improved:
+            improved = False
+            candidates = []
             
-            while improved and trial < max_trials_per_pos:
-                improved = False
-                trial += 1
+            # 生成所有邻域解
+            for patch_idx in range(len(best)):
+                # 位置邻域 (±1, ±2, ±3)
+                for delta in [-3, -2, -1, 1, 2, 3]:
+                    cand = best.clone()
+                    new_pos = torch.clamp(cand[patch_idx, 0] + delta, 0, seq_len - 1)
+                    if new_pos != cand[patch_idx, 0]:
+                        cand[patch_idx, 0] = new_pos
+                        candidates.append(cand)
                 
-                # 只修改当前patch
-                cand = best.clone()
+                # 数量邻域 (±1)
+                for delta in [-1, 1]:
+                    cand = best.clone()
+                    new_cnt = torch.clamp(cand[patch_idx, 1] + delta, 0, self.max_insert)
+                    if new_cnt != cand[patch_idx, 1]:
+                        cand[patch_idx, 1] = new_cnt
+                        candidates.append(cand)
+            
+            # 批量评估
+            if candidates:
+                scores = self.evaluate_paths(candidates, traces, labels, chunk_size)
+                best_idx = scores.argmax()
                 
-                if torch.rand(1) < 0.5:
-                    # 调整位置
-                    delta = torch.randint(-3, 4, (1,)).item()
-                    cand[patch_idx, 0] = torch.clamp(cand[patch_idx, 0] + delta, 0, seq_len - 1)
-                else:
-                    # 调整数量
-                    cand[patch_idx, 1] = torch.clamp(
-                        cand[patch_idx, 1] + (1 if torch.rand(1) < 0.5 else -1),
-                        0, self.max_insert
-                    )
-                
-                score = self._eval_single(cand.to(self.device), traces, labels, chunk_size)
-                
-                if score > best_score:
-                    best, best_score = cand.clone(), score
-                    improved = True  # 继续优化这个位置
+                if scores[best_idx] > best_score:
+                    best = candidates[best_idx].clone()
+                    best_score = scores[best_idx].item()
+                    improved = True
         
         return best, best_score
 
-    def _update_pheromone(self, pheromone, solutions, scores, seq_len):
-        """更新信息素"""
+    def _update_pheromone_with_diffusion(self, pos_pheromone, count_pheromone, 
+                                         solutions, scores, seq_len):
+        """
+        更新信息素 - 带邻域扩散
+        """
         # 标准化分数
         scores_arr = np.array(scores)
-        mean_s, std_s = scores_arr.mean(), scores_arr.std() + 1e-9
-        rewards = 1.0 / (1.0 + np.exp(-(scores_arr - mean_s) / std_s))
+        if scores_arr.std() < 1e-6:
+            rewards = np.ones_like(scores_arr) / len(scores_arr)
+        else:
+            mean_s, std_s = scores_arr.mean(), scores_arr.std()
+            rewards = 1.0 / (1.0 + np.exp(-(scores_arr - mean_s) / std_s))
+            rewards = rewards / rewards.sum()
         
-        # 计算增量
-        delta = torch.zeros((seq_len, self.max_insert + 1))
+        # === 更新位置信息素 (带扩散) ===
+        pos_delta = torch.zeros(seq_len)
         for sol, r in zip(solutions, rewards):
-            for pos, cnt in sol.tolist():
-                delta[int(pos), int(cnt)] += r
+            for pos, _ in sol.tolist():
+                pos = int(pos)
+                # 中心位置
+                pos_delta[pos] += r
+                
+                # 邻域扩散 (高斯衰减)
+                for offset in range(1, self.diffusion_radius + 1):
+                    weight = r * np.exp(-offset**2 / (2 * (self.diffusion_radius/2)**2))
+                    if pos - offset >= 0:
+                        pos_delta[pos - offset] += weight
+                    if pos + offset < seq_len:
+                        pos_delta[pos + offset] += weight
         
-        if delta.sum() > 0:
-            delta = delta / delta.sum()
+        if pos_delta.sum() > 0:
+            pos_delta = pos_delta / pos_delta.sum()
         
-        # 更新
-        pheromone = (1 - self.rho) * pheromone + self.gamma * delta
-        pheromone = pheromone.clamp(min=1e-9)
-        pheromone = pheromone / pheromone.sum(dim=1, keepdim=True)
-        return pheromone
+        # === 更新数量信息素 ===
+        count_delta = torch.zeros(self.max_insert + 1)
+        for sol, r in zip(solutions, rewards):
+            for _, cnt in sol.tolist():
+                cnt = int(cnt)
+                count_delta[cnt] += r
+                # 邻域扩散
+                if cnt > 0:
+                    count_delta[cnt - 1] += r * 0.3
+                if cnt < self.max_insert:
+                    count_delta[cnt + 1] += r * 0.3
+        
+        if count_delta.sum() > 0:
+            count_delta = count_delta / count_delta.sum()
+        
+        # === 信息素更新 ===
+        pos_pheromone = (1 - self.rho) * pos_pheromone + self.gamma * pos_delta
+        pos_pheromone = pos_pheromone.clamp(min=1e-9)
+        pos_pheromone = pos_pheromone / pos_pheromone.sum()
+        
+        count_pheromone = (1 - self.rho) * count_pheromone + self.gamma * count_delta
+        count_pheromone = count_pheromone.clamp(min=1e-9)
+        count_pheromone = count_pheromone / count_pheromone.sum()
+        
+        return pos_pheromone, count_pheromone
 
     def run(self, traces, labels, chunk_size=64):
         """
         主流程
-        
-        返回: (best_solution, best_score)
         """
         seq_len, B = traces.size(1), traces.size(0)
         
-        # 初始化
-        pheromone = torch.ones((seq_len, self.max_insert + 1))
-        pheromone = pheromone / pheromone.sum(dim=1, keepdim=True)
+        # 初始化: 分离的信息素
+        pos_pheromone = torch.ones(seq_len) / seq_len
+        count_pheromone = torch.ones(self.max_insert + 1) / (self.max_insert + 1)
         
         best_global = None
         best_score_global = -1
         no_improve = 0
-        self.good_positions = []  # 清空历史
+        self.best_history = []
 
         for it in range(self.max_iters):
             # 1. 采样
-            solutions = [self.sample_paths(pheromone) for _ in range(self.num_ants)]
+            solutions = [self.sample_paths(pos_pheromone, count_pheromone) 
+                        for _ in range(self.num_ants)]
             
             # 2. 评估
             scores = self.evaluate_paths(solutions, traces, labels, chunk_size)
@@ -282,20 +242,17 @@ class HAAD:
             refined_scores = []
             
             for idx in top5_idx:
-                sol, score = self.local_search(solutions[idx], traces, labels, 
-                                              max_trials_per_pos=max(10, self.local_trials//3), 
-                                              chunk_size=chunk_size)
+                sol, score = self.local_search_parallel(solutions[idx], traces, labels, chunk_size)
                 refined.append(sol)
                 refined_scores.append(score)
                 
-                # 更新历史（用于连续采样）
-                for pos in sol[:, 0].tolist():
-                    self.good_positions.append((pos, score))
+                # 记录历史
+                self.best_history.append((sol.clone(), score))
             
             # 保持历史大小
-            if len(self.good_positions) > 100:
-                self.good_positions.sort(key=lambda x: x[1], reverse=True)
-                self.good_positions = self.good_positions[:50]
+            if len(self.best_history) > 50:
+                self.best_history.sort(key=lambda x: x[1], reverse=True)
+                self.best_history = self.best_history[:25]
             
             # 4. 更新全局最优
             best_idx = int(np.argmax(refined_scores))
@@ -303,32 +260,74 @@ class HAAD:
                 best_score_global = refined_scores[best_idx]
                 best_global = refined[best_idx].clone()
                 no_improve = 0
-                print(f"[Iter {it}] Best: {best_score_global:.0f}/{B}, "
-                      f"pos={[p for p in best_global[:, 0].tolist()]}")
+                print(f"[Iter {it}] Best: {best_score_global:.0f}/{B} ({best_score_global/B*100:.1f}%)")
+                print(f"  Positions: {best_global[:, 0].tolist()}")
+                print(f"  Counts:    {best_global[:, 1].tolist()}")
             else:
                 no_improve += 1
             
-            # 5. 更新信息素
-            pheromone = self._update_pheromone(pheromone, refined, refined_scores, seq_len)
+            # 5. 更新信息素 (使用历史最优解)
+            if len(self.best_history) >= 5:
+                # 使用历史top-10进行更新
+                hist_sorted = sorted(self.best_history, key=lambda x: x[1], reverse=True)[:10]
+                hist_sols = [s for s, _ in hist_sorted]
+                hist_scores = [sc for _, sc in hist_sorted]
+                pos_pheromone, count_pheromone = self._update_pheromone_with_diffusion(
+                    pos_pheromone, count_pheromone, hist_sols, hist_scores, seq_len
+                )
+            else:
+                pos_pheromone, count_pheromone = self._update_pheromone_with_diffusion(
+                    pos_pheromone, count_pheromone, refined, refined_scores, seq_len
+                )
             
-            # 6. 动态调整连续比例
-            self.continuous_ratio = min(0.5, 0.3 + 0.2 * (it / self.max_iters))
+            # 6. 动态调整探索率
+            self.epsilon = max(0.05, 0.1 * (1 - it / self.max_iters))
             
             # 7. 重启机制
             if no_improve >= max(5, self.max_iters // 5):
-                pheromone = (pheromone + torch.ones_like(pheromone) / (self.max_insert + 1)) / 2
-                pheromone = pheromone / pheromone.sum(dim=1, keepdim=True)
-                self.good_positions = self.good_positions[:len(self.good_positions)//2]
+                print(f"[Iter {it}] Restart - resetting pheromone")
+                pos_pheromone = (pos_pheromone + torch.ones_like(pos_pheromone) / seq_len) / 2
+                count_pheromone = (count_pheromone + torch.ones_like(count_pheromone) / (self.max_insert+1)) / 2
+                self.best_history = self.best_history[:len(self.best_history)//2]
                 no_improve = 0
-                print(f"[Iter {it}] Restart")
             
             # 8. 提前终止
             if best_score_global >= B * 0.98:
-                print(f"[Iter {it}] Early stop")
+                print(f"[Iter {it}] Early stop - achieved 98% success rate")
                 break
         
         if best_global is None:
-            best_global = self.sample_paths(pheromone, epsilon=1.0)
+            best_global = self.sample_paths(pos_pheromone, count_pheromone, epsilon=1.0)
             best_score_global = 0
         
         return best_global, best_score_global
+
+
+def generate_adv_trace(perturbations: torch.Tensor, traces: torch.Tensor) -> torch.Tensor:
+    """在 traces 中插入对抗扰动"""
+    if perturbations.numel() == 0:
+        return traces
+
+    perturbations = perturbations.to(traces.device)
+    insert_loc = torch.argsort(perturbations[:, 0].cpu()).to(perturbations.device)
+    perturbations = perturbations[insert_loc]
+
+    insert_positions = perturbations[:, 0].long()
+    insert_counts = perturbations[:, 1].long()
+    total_insert = insert_counts.sum().item()
+    if total_insert == 0:
+        return traces
+
+    B, seq_len, _ = traces.shape
+    new_traces = torch.zeros((B, seq_len + total_insert, 1), device=traces.device)
+
+    prev_pos, offset = 0, 0
+    for i in range(len(insert_positions)):
+        pos, num_insert = insert_positions[i].item(), insert_counts[i].item()
+        new_traces[:, prev_pos+offset:pos+offset, :] = traces[:, prev_pos:pos, :]
+        insert_val = traces[:, pos if pos < seq_len else -1, :]
+        new_traces[:, pos+offset:pos+offset+num_insert, :] = insert_val.unsqueeze(1).expand(-1, num_insert, -1)
+        prev_pos, offset = pos, offset + num_insert
+    new_traces[:, prev_pos+offset:, :] = traces[:, prev_pos:, :]
+
+    return new_traces[:, :seq_len, :]
