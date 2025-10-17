@@ -111,7 +111,7 @@ def build_model_instance(model_type, num_classes, config):
         #     learn_params=learn_params, train_gen=train_loader, test_gen=None,
         #     steps=learn_params.as_int('batch_size'), nb_classes=num_classes
         # )
-        model3 = AWFNet(num_classes=num_classes)
+        model3 = DFNet(num_classes=num_classes)
         return Tor_ensemble_model(model1, model2, model3, num_classes=num_classes)
     elif model_type == "awf":
         return AWFNet(num_classes=num_classes)
@@ -271,8 +271,7 @@ def main(base_patch_nums = 8):
         f.write(f"Params: patch_nums={base_patch_nums}, numant={numant}, "
                 f"itermax={itermax}, max_insert={max_insert}\n")
         f.write(f"\nTop patches:\n")
-        for i, p in enumerate(top_patches, 1):
-            f.write(f"  {i}. {p}\n")
+        f.write(f"{top_patches}\n")
         f.write(f"\nResults:\n")
         f.write(f"  Accuracy: {acc_before:.4f} -> {acc_after:.4f}\n")
         f.write(f"  Success rate: {success_rate:.4f}\n")
