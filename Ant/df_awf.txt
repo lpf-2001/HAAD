@@ -1,0 +1,14 @@
+====================
+Dataset:rimmer100
+Verifier Model:awf
+Source Model:df
+Overhead:35
+Accuracy: 0.9233969358774351======>0.057362294491779674
+
+====================
+Dataset:rimmer100
+Verifier Model:awf
+Source Model:df
+Overhead:42
+Accuracy: 0.9233969358774351======>0.05124204968198728
+====================

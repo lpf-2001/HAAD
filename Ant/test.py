@@ -52,7 +52,7 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
-
+ 
     evaluation_metrics = eval_on_test(V_model, test_loader, v, device, generate_adv_trace)
     acc_before, acc_after, total_cost = evaluation_metrics
 
