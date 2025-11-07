@@ -100,22 +100,22 @@ def LoadDataNoDefCW(input_size, num_classes,formatting=True,val_ratio=0.25,test_
     with open(dataset_dir + 'y_test_NoDef.pkl', 'rb') as handle:
         y_test = np.array(pickle.load(handle, encoding='bytes'))
 
-    print( "Data dimensions:")
-    print ("X: Training data's shape : ", X_train.shape)
-    print ("y: Training data's shape : ", y_train.shape)
-    print ("X: Validation data's shape : ", X_valid.shape)
-    print ("y: Validation data's shape : ", y_valid.shape)
-    print ("X: Testing data's shape : ", X_test.shape)
-    print ("y: Testing data's shape : ", y_test.shape)
+    # print( "Data dimensions:")
+    # print ("X: Training data's shape : ", X_train.shape)
+    # print ("y: Training data's shape : ", y_train.shape)
+    # print ("X: Validation data's shape : ", X_valid.shape)
+    # print ("y: Validation data's shape : ", y_valid.shape)
+    # print ("X: Testing data's shape : ", X_test.shape)
+    # print ("y: Testing data's shape : ", y_test.shape)
     all_x = np.concatenate((X_train,X_valid,X_test),axis=0)
     all_y = np.concatenate((y_train,y_valid,y_test),axis=0)
-    category_count = Counter(all_y)
-    count_ = 0
-    for category, count in category_count.items():
-        print(f"类别 {category} 的数量是: {count}")
-        count_ += 1
-        if count_ == 4:
-            break
+    # category_count = Counter(all_y)
+    # count_ = 0
+    # for category, count in category_count.items():
+    #     print(f"类别 {category} 的数量是: {count}")
+    #     count_ += 1
+    #     if count_ == 4:
+    #         break
     X_train, y_train, X_valid, y_valid, X_test, y_test = train_test_valid_split(all_x,all_y, valid_size=val_ratio, test_size=test_ratio)
     if formatting:
         return format_data_all(X_train, y_train, X_valid, y_valid, X_test, y_test, input_size, num_classes)
@@ -165,13 +165,13 @@ def load_rimmer_dataset(input_size=5000, num_classes=100, formatting=True,test_r
     websites = np.unique(labels)
     for w in websites:
         y[np.where(labels == w)] = np.where(websites == w)[0][0]
-    category_count = Counter(y)
-    count_ = 0
-    for category, count in category_count.items():
-        count_ = count_ + 1
-        print(f"类别 {category} 的数量是: {count}")
-        if count_ == 5:
-            break
+    # category_count = Counter(y)
+    # count_ = 0
+    # for category, count in category_count.items():
+    #     count_ = count_ + 1
+    #     print(f"类别 {category} 的数量是: {count}")
+    #     if count_ == 5:
+    #         break
     # Split data to fixed parts
     X_train, y_train, X_valid, y_valid, X_test, y_test = train_test_valid_split(data, y, valid_size=val_ratio, test_size=test_ratio)
     with open(dataset_dir + 'tor_%dw_2500tr_test.npz' % num_classes, 'wb') as handle:

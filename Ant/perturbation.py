@@ -1,6 +1,6 @@
 import torch
+import random, numpy as np, os
 import torch.nn as nn
-import numpy as np
 import argparse
 import sys
 from configobj import ConfigObj
@@ -23,47 +23,6 @@ from U_perturbation import run_improved_universal_selector  # ✅ 使用改进�
 
 
 
-# ============================================================
-#   全局评估函数
-# ============================================================
-def eval_on_test(V_model, test_loader, top_patches, device, generate_adv_trace_fn):
-    """
-    评估选中的patches在测试集上的效果
-    
-    参数:
-        V_model: 验证模型
-        test_loader: 测试数据集
-        top_patches: 选中的patches列表 [[pos, num], ...]
-        device: 设备
-        generate_adv_trace_fn: 生成对抗样本的函数
-    """
-    origin_sum, adv_sum, sample_sum = 0, 0, 0
-    
-    # 转换patches为tensor
-    v_tensor = torch.tensor(top_patches, dtype=torch.int64, device=device)
-    
-    V_model.eval()
-    with torch.no_grad():
-        for batch_x_tensor, batch_y_tensor in tqdm(test_loader, desc='[Global Eval]'):
-            batch_x_tensor = batch_x_tensor.float().to(device)
-            batch_y_tensor = batch_y_tensor.to(device)
-            
-            # 原始准确率
-            origin_pred = V_model(batch_x_tensor)
-            origin_sum += (batch_y_tensor.argmax(1) == origin_pred.argmax(1)).sum().item()
-            
-            # 扰动后准确率
-            x_adv = generate_adv_trace_fn(v_tensor, batch_x_tensor)
-            adv_pred = V_model(x_adv)
-            adv_sum += (batch_y_tensor.argmax(1) == adv_pred.argmax(1)).sum().item()
-            
-            sample_sum += batch_x_tensor.shape[0]
-    
-    acc_before = origin_sum / sample_sum
-    acc_after = adv_sum / sample_sum
-    total_cost = int(v_tensor[:, 1].sum().item())
-    
-    return acc_before, acc_after, total_cost
 
 
 
@@ -134,9 +93,9 @@ def main(base_patch_nums = 8):
     
     haad = HAAD(
         model=S_model,          # 模型
-        num_ants=30,          # 蚂蚁数量（影响搜索广度）
+        num_ants=15,          # 蚂蚁数量（影响搜索广度）
         patches=base_patch_nums,  # 基础patch数量
-        max_iters=100       # 最大迭代次数
+        max_iters=50       # 最大迭代次数
 
     )
     
@@ -146,7 +105,7 @@ def main(base_patch_nums = 8):
     eval_batches = []  # 存储用于评估的batches
     
     # 从训练集收集候选组合
-    max_train_batches = 300  # 限制训练batch数量，避免过长
+    max_train_batches = 20  # 限制训练batch数量，避免过长
     for batch_idx, (x_batch, y_batch) in enumerate(tqdm(train_loader, desc="收集HAAD组合")):
         patches, _ = haad.run(x_batch, y_batch)
         haad_results.append(patches)
@@ -202,6 +161,7 @@ def main(base_patch_nums = 8):
         generate_adv_trace
     )
     
+    
     success_rate = 1 - acc_after / acc_before if acc_before > 0 else 0
     
     print(f"\n最终结果:")
@@ -211,7 +171,7 @@ def main(base_patch_nums = 8):
     print(f"  总开销 (插入tokens): {cost}")
 
     # ------------------- 保存结果 -------------------
-    result_file = "universal_summary_improved.txt"
+    result_file = f"{dataset}_universal_summary_improved.txt"
     with open(result_file, "a") as f:
         tz = timezone(timedelta(hours=8))
         now = datetime.now(tz)
@@ -235,8 +195,26 @@ def main(base_patch_nums = 8):
     torch.cuda.empty_cache()
 
 
+
 # ============================================================
+# from pyinstrument import Profiler
+
+
+def set_seed(seed=2025):
+    
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    print(f"[Seed Fixed] Using random seed = {seed}")
+
+
+
 if __name__ == "__main__":
+    # set_seed(2025)  # ✅ 固定随机种子
     parser = argparse.ArgumentParser(
         description='Improved Universal Perturbation with Conflict Detection'
     )
@@ -253,7 +231,9 @@ if __name__ == "__main__":
     dataset = args.dataset
     config = ConfigObj("../DLWF_pytorch/My_tor.conf")
     
-
+    # profiler=Profiler()
+    # profiler.start()
     
-    for i in range(4,10):
+    for i in range(5,9):
         main(i)
+    # profiler.stop()

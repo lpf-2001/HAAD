@@ -1,8 +1,0 @@
-
-====================
-Dataset:rimmer100
-Verifier Model:awf
-Source Model:ensemble
-Overhead:36
-Accuracy: 0.9233969358774351======>0.04160166406656266
-====================

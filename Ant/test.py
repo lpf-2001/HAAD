@@ -16,7 +16,8 @@ from DLWF_pytorch.model import *
 from torch.utils.data import DataLoader,Subset
 
 from tqdm import tqdm
-from perturbation import build_model_instance,eval_on_test,split_alpha_number
+
+from HAAD_utils import *
 import os
 import argparse
 torch.cuda.empty_cache()
@@ -33,16 +34,18 @@ def main():
     batch_size = 128
     
     data_name, num_classes = split_alpha_number(dataset)
-    v = torch.tensor( [71,5,71,6,13,5,42,5,24,5,3,6,30,6,6,4]).reshape(-1,2)
+    top_patches = torch.tensor([[3, 5], [15, 6], [12, 6], [26, 6], [46, 6], [44, 6], [49, 6]]).reshape(-1,2)
     
     if data_name == "sirinam":
         X_train, y_train, X_valid, y_valid, X_test, y_test = LoadDataNoDefCW(
-            input_size=200, num_classes=num_classes, test_ratio=test_ratio, val_ratio=val_ratio)
+            input_size=200, num_classes=num_classes, test_ratio=0.25, val_ratio=0.742)
     elif data_name == "rimmer":
         X_train, y_train, X_valid, y_valid, X_test, y_test = load_rimmer_dataset(
-            input_size=200, num_classes=num_classes, test_ratio=test_ratio, val_ratio=val_ratio)
-    V_model = build_model_instance(v_model, num_classes, config).to(device)
+            input_size=200, num_classes=num_classes, test_ratio=0.25, val_ratio=0.742)
+    V_model = build_model_instance(v_model, dataset, config).to(device)
+    S_model = build_model_instance(s_model, dataset, config).to(device)
     V_model.load_state_dict(torch.load(parent_dir + f'/utils/trained_model/{dataset}/{v_model}.pkl'))
+    S_model.load_state_dict(torch.load(parent_dir + f'/utils/trained_model/{dataset}/{s_model}.pkl'))
     V_model.eval()
     
 
@@ -53,8 +56,22 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
  
-    evaluation_metrics = eval_on_test(V_model, test_loader, v, device, generate_adv_trace)
-    acc_before, acc_after, total_cost = evaluation_metrics
+    
+    acc_before, acc_after, cost = eval_on_test(
+        V_model, 
+        test_loader, 
+        top_patches, 
+        device,
+        generate_adv_trace
+    )
+    S_acc_before, S_acc_after, cost = eval_on_test(
+        S_model, 
+        test_loader, 
+        top_patches, 
+        device,
+        generate_adv_trace
+    )
+    
 
    
     with open(f"{s_model}_{v_model}.txt",'a') as f:
@@ -62,7 +79,9 @@ def main():
         f.write(f"Dataset:{dataset}\n")
         f.write(f"Verifier Model:{v_model}\n")
         f.write(f"Source Model:{s_model}\n")
-        f.write(f"Overhead:{total_cost}\nAccuracy: {acc_before}======>{acc_after}\n")
+        f.write(f"Verifier Model Accuracy: {acc_before}======>{acc_after}\n")
+        f.write(f"Source Model Accuracy: {S_acc_before}======>{S_acc_after}\n")
+        f.write(f"Total Cost (number of modified packets): {cost}\n")
         f.write("====================\n")
     f.close()
     print(f"done! see {s_model}_{v_model}.txt")

@@ -240,91 +240,43 @@ def build_model(learn_params, train_gen, test_gen, steps=0, pre_train=True, nb_c
     
     return sae
 
+
+
+    
+    
+
+
 class Tor_ensemble_model(nn.Module):
-    def __init__(self,model1,model2,model3, num_classes=95):
-        super(Tor_ensemble_model, self).__init__()
-        self.fc1 = nn.Linear(in_features=num_classes, out_features=num_classes, bias=False)
-        self.fc2 = nn.Linear(in_features=num_classes, out_features=num_classes, bias=False)
-        self.fc3 = nn.Linear(in_features=num_classes, out_features=num_classes, bias=False)
-        self.dropout = nn.Dropout(0.1)
+    """加权投票式集成模型，权重可训练"""
+    def __init__(self, model1, model2, model3, temperature=1.0):
+        super().__init__()
         self.model1 = model1
         self.model2 = model2
         self.model3 = model3
+        # 可训练权重
+        w_init = torch.tensor([1/3, 1/3, 1/3], dtype=torch.float32)
+        self.weights = nn.Parameter(w_init)
+        # 可训练温度
+        self.temperature = nn.Parameter(torch.tensor(float(temperature)))
 
-    def calculate_weighted_tensor(self, fc_layer, input_tensor):
-        """
-        计算加权张量
-        :param fc_layer: 全连接层
-        :param input_tensor: 输入张量
-        :return: 加权张量
-        """
-        # 检查输入张量的维度
-        if input_tensor.dim() != 2:
-            raise ValueError("Input tensor should be 2-dimensional.")
-        # print(f"input shape:{input_tensor.shape}")
-        batch_size = input_tensor.shape[0]
-        # 应用全连接层并求和
-        weighted_sum = torch.sum(fc_layer(input_tensor), dim=0)
-        # 计算平均值
-        weighted_tensor = weighted_sum / batch_size
-        # 扩展维度以匹配输入张量的形状
-        weighted_tensor = weighted_tensor.unsqueeze(0).expand(batch_size, -1)
-        return weighted_tensor
-    # def forward(self, x):    
-    
-    #     x2 = self.model2(x)  #接受（batch_size,200,1） 
-
-    #     x1 = self.model1(x)  
-    #     x3 = self.model3(x)
-    #     # print(f"x1 shape:{x1.shape}")
-    
-    #     # 为每个张量应用不同的全连接层
-    #     weighted_tensor1 = torch.sum(self.fc1(x1),0)/(x1.shape[0])
-    #     # print(f"weight1 shape:{weighted_tensor1.shape}")
-    #     weighted_tensor2 = torch.sum(self.fc1(x2),0)/(x1.shape[0])
-    #     weighted_tensor3 = torch.sum(self.fc1(x3),0)/(x1.shape[0])
-    #     weighted_tensor1 = weighted_tensor1.expand(x1.shape[0],x1.shape[1])
-    #     weighted_tensor2 = self.fc2(x2).expand(x1.shape[0],x1.shape[1])
-    #     weighted_tensor3 = self.fc3(x3).expand(x1.shape[0],x1.shape[1])
-    #     # print(f"weight2 shape:{weighted_tensor1.shape}")
-
-
-
-
-    #     # 对每个张量应用相应的权重进行逐元素相乘
-    #     result1 = x1 * weighted_tensor1
-    #     result2 = x2 * weighted_tensor2
-    #     result3 = x3 * weighted_tensor3
-
-    #     # 如果需要，可以将结果合并，例如逐元素求和
-    #     final_result = result1 + result2 + result3
-    #     return final_result
     def forward(self, x):
-        # 通过不同模型得到输出
-        x1 = self.model1(x)
-        
-        x2 = self.model2(x)
-        
-        x3 = self.model3(x)
-        x1 = self.dropout(x1)
-        x2 = self.dropout(x2)
-        x3 = self.dropout(x3)
-        # 为每个张量应用不同的全连接层
-        weighted_tensor1 = self.calculate_weighted_tensor(self.fc1, x1)
-        weighted_tensor2 = self.calculate_weighted_tensor(self.fc2, x2)
-        weighted_tensor3 = self.calculate_weighted_tensor(self.fc3, x3)
+        # logits 级融合，保留梯度
+        z1 = self.model1(x)
+        z2 = self.model2(x)
+        z3 = self.model3(x)
 
-        # 对每个张量应用相应的权重进行逐元素相乘
-        result1 = x1 * weighted_tensor1
-        result2 = x2 * weighted_tensor2
-        result3 = x3 * weighted_tensor3
+        # 可训练权重 softmax
+        w = torch.softmax(self.weights, dim=0)
+        z_ens = w[0] * z1 + w[1] * z2 + w[2] * z3
 
-        # 将结果合并，逐元素求和
-        final_result = result1 + result2 + result3
-        return final_result
+        # 温度缩放，保证梯度平滑
+        T = torch.clamp(self.temperature, min=1e-3)
+        out = z_ens / T
+        return out
 
 
 
+    
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

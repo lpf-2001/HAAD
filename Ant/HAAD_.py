@@ -19,6 +19,7 @@ class HAAD:
                  rho: float = 0.1, gamma: float = 0.35,
                  local_trials: int = 30, epsilon: float = 0.1,
                  diffusion_radius: int = 5,  # 新增: 信息素扩散半径
+                 diffusion_radius2: int = 1,
                  device=device):
         self.model = model.to(device)
         self.num_ants = num_ants
@@ -30,6 +31,7 @@ class HAAD:
         self.local_trials = local_trials
         self.epsilon = epsilon
         self.diffusion_radius = diffusion_radius
+        self.diffusion_radius2 = diffusion_radius2
         self.device = device
         
         # 历史最优解
@@ -192,13 +194,17 @@ class HAAD:
         for sol, r in zip(solutions, rewards):
             for _, cnt in sol.tolist():
                 cnt = int(cnt)
+                # 中心位置
                 count_delta[cnt] += r
-                # 邻域扩散
-                if cnt > 0:
-                    count_delta[cnt - 1] += r * 0.3
-                if cnt < self.max_insert:
-                    count_delta[cnt + 1] += r * 0.3
-        
+                
+                # 邻域扩散 (与位置信息素相同方式)
+                for offset in range(1, self.diffusion_radius2 + 1):
+                    weight = r * np.exp(-offset**2 / (2 * (self.diffusion_radius2/2)**2))
+                    if cnt - offset >= 0:
+                        count_delta[cnt - offset] += weight
+                    if cnt + offset <= self.max_insert:
+                        count_delta[cnt + offset] += weight
+
         if count_delta.sum() > 0:
             count_delta = count_delta / count_delta.sum()
         

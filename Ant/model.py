@@ -248,22 +248,30 @@ def build_model(learn_params, train_gen, test_gen, steps=0, pre_train=True, nb_c
 
 class Tor_ensemble_model(nn.Module):
     """加权投票式集成模型，权重可训练"""
-    def __init__(self, model1, model2, model3):
+    def __init__(self, model1, model2, model3, temperature=1.0):
         super().__init__()
         self.model1 = model1
         self.model2 = model2
         self.model3 = model3
+        # 可训练权重
         w_init = torch.tensor([1/3, 1/3, 1/3], dtype=torch.float32)
         self.weights = nn.Parameter(w_init)
+        # 可训练温度
+        self.temperature = nn.Parameter(torch.tensor(float(temperature)))
 
     def forward(self, x):
-        # 子模型固定，不训练
-        with torch.no_grad():
-            p1 = torch.softmax(self.model1(x), dim=1)
-            p2 = torch.softmax(self.model2(x), dim=1)
-            p3 = torch.softmax(self.model3(x), dim=1)
+        # logits 级融合，保留梯度
+        z1 = self.model1(x)
+        z2 = self.model2(x)
+        z3 = self.model3(x)
+
+        # 可训练权重 softmax
         w = torch.softmax(self.weights, dim=0)
-        out = w[0] * p1 + w[1] * p2 + w[2] * p3
+        z_ens = w[0] * z1 + w[1] * z2 + w[2] * z3
+
+        # 温度缩放，保证梯度平滑
+        T = torch.clamp(self.temperature, min=1e-3)
+        out = z_ens / T
         return out
 
 
