@@ -1,0 +1,42 @@
+s_model:ensemble,v_model:awf,Overhead:30,Accuracy: 0.658,Recall: 0.658,Precision: 0.716,F1-score: 0.656
+s_model:ensemble,v_model:awf,Overhead:32,Accuracy: 0.535,Recall: 0.535,Precision: 0.588,F1-score: 0.528
+s_model:ensemble,v_model:awf,Overhead:34,Accuracy: 0.259,Recall: 0.259,Precision: 0.301,F1-score: 0.253
+s_model:ensemble,v_model:awf,Overhead:36,Accuracy: 0.493,Recall: 0.493,Precision: 0.550,F1-score: 0.487
+s_model:ensemble,v_model:awf,Overhead:38,Accuracy: 0.525,Recall: 0.525,Precision: 0.587,F1-score: 0.521
+s_model:ensemble,v_model:awf,Overhead:40,Accuracy: 0.182,Recall: 0.182,Precision: 0.203,F1-score: 0.171
+s_model:ensemble,v_model:awf,Overhead:42,Accuracy: 0.533,Recall: 0.533,Precision: 0.587,F1-score: 0.527
+s_model:ensemble,v_model:awf,Overhead:44,Accuracy: 0.263,Recall: 0.263,Precision: 0.296,F1-score: 0.251
+s_model:ensemble,v_model:awf,Overhead:46,Accuracy: 0.350,Recall: 0.350,Precision: 0.397,F1-score: 0.341
+s_model:ensemble,v_model:awf,Overhead:48,Accuracy: 0.230,Recall: 0.230,Precision: 0.262,F1-score: 0.221
+Overhead:[30, 32, 34, 36, 38, 40, 42, 44, 46, 48]
+Accuracy: [0.658, 0.535, 0.259, 0.493, 0.525, 0.182, 0.533, 0.263, 0.35, 0.23]
+Precision: [0.716, 0.588, 0.301, 0.55, 0.587, 0.203, 0.587, 0.296, 0.397, 0.262]
+F1-score: [0.656, 0.528, 0.253, 0.487, 0.521, 0.171, 0.527, 0.251, 0.341, 0.221]
+s_model:ensemble,v_model:awf,Overhead:30,Accuracy: 0.565,Recall: 0.565,Precision: 0.608,F1-score: 0.556
+s_model:ensemble,v_model:awf,Overhead:32,Accuracy: 0.582,Recall: 0.582,Precision: 0.638,F1-score: 0.577
+s_model:ensemble,v_model:awf,Overhead:34,Accuracy: 0.526,Recall: 0.526,Precision: 0.596,F1-score: 0.525
+s_model:ensemble,v_model:awf,Overhead:36,Accuracy: 0.510,Recall: 0.510,Precision: 0.571,F1-score: 0.507
+s_model:ensemble,v_model:awf,Overhead:38,Accuracy: 0.583,Recall: 0.583,Precision: 0.634,F1-score: 0.577
+s_model:ensemble,v_model:awf,Overhead:40,Accuracy: 0.344,Recall: 0.344,Precision: 0.399,F1-score: 0.340
+s_model:ensemble,v_model:awf,Overhead:42,Accuracy: 0.359,Recall: 0.359,Precision: 0.412,F1-score: 0.355
+s_model:ensemble,v_model:awf,Overhead:44,Accuracy: 0.217,Recall: 0.217,Precision: 0.256,F1-score: 0.212
+s_model:ensemble,v_model:awf,Overhead:46,Accuracy: 0.219,Recall: 0.219,Precision: 0.246,F1-score: 0.209
+s_model:ensemble,v_model:awf,Overhead:48,Accuracy: 0.526,Recall: 0.526,Precision: 0.583,F1-score: 0.519
+Overhead:[30, 32, 34, 36, 38, 40, 42, 44, 46, 48]
+Accuracy: [0.565, 0.582, 0.526, 0.51, 0.583, 0.344, 0.359, 0.217, 0.219, 0.526]
+Precision: [0.608, 0.638, 0.596, 0.571, 0.634, 0.399, 0.412, 0.256, 0.246, 0.583]
+F1-score: [0.556, 0.577, 0.525, 0.507, 0.577, 0.34, 0.355, 0.212, 0.209, 0.519]
+s_model:ensemble,v_model:awf,Overhead:30,Accuracy: 0.397,Recall: 0.397,Precision: 0.467,F1-score: 0.398
+s_model:ensemble,v_model:awf,Overhead:32,Accuracy: 0.479,Recall: 0.479,Precision: 0.551,F1-score: 0.481
+s_model:ensemble,v_model:awf,Overhead:34,Accuracy: 0.360,Recall: 0.360,Precision: 0.424,F1-score: 0.358
+s_model:ensemble,v_model:awf,Overhead:36,Accuracy: 0.395,Recall: 0.395,Precision: 0.460,F1-score: 0.394
+s_model:ensemble,v_model:awf,Overhead:38,Accuracy: 0.262,Recall: 0.262,Precision: 0.315,F1-score: 0.260
+s_model:ensemble,v_model:awf,Overhead:40,Accuracy: 0.325,Recall: 0.325,Precision: 0.386,F1-score: 0.323
+s_model:ensemble,v_model:awf,Overhead:42,Accuracy: 0.207,Recall: 0.207,Precision: 0.255,F1-score: 0.206
+s_model:ensemble,v_model:awf,Overhead:44,Accuracy: 0.316,Recall: 0.316,Precision: 0.374,F1-score: 0.314
+s_model:ensemble,v_model:awf,Overhead:46,Accuracy: 0.252,Recall: 0.252,Precision: 0.306,F1-score: 0.251
+s_model:ensemble,v_model:awf,Overhead:48,Accuracy: 0.188,Recall: 0.188,Precision: 0.226,F1-score: 0.184
+Overhead:[30, 32, 34, 36, 38, 40, 42, 44, 46, 48]
+Accuracy: [0.397, 0.479, 0.36, 0.395, 0.262, 0.325, 0.207, 0.316, 0.252, 0.188]
+Precision: [0.467, 0.551, 0.424, 0.46, 0.315, 0.386, 0.255, 0.374, 0.306, 0.226]
+F1-score: [0.398, 0.481, 0.358, 0.394, 0.26, 0.323, 0.206, 0.314, 0.251, 0.184]

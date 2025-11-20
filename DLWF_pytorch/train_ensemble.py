@@ -22,14 +22,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train_ensemble(learn_param, data_name, num_classes, config_path="My_tor.conf"):
     """训练加权投票 ensemble"""
-    # 1️⃣ 加载数据
+    # 1 加载数据
     train_loader, val_loader, test_loader = load_datasets(data_name, num_classes, learn_param)
 
-    # 2️⃣ 配置
+    # 2 配置
     config = ConfigObj(config_path)
     mp = config['lstm']['model_param']
 
-    # 3️⃣ 加载子模型
+    # 3 加载子模型
     model_varcnn = VarCNN(200, num_classes).to(device)
     model_lstm = Tor_lstm(
         input_size=mp.as_int('input_size'),
@@ -39,21 +39,21 @@ def train_ensemble(learn_param, data_name, num_classes, config_path="My_tor.conf
     ).to(device)
     model_df = DFNet(num_classes=num_classes).to(device)
 
-    # 4️⃣ 尝试加载已有权重
+    # 4️ 尝试加载已有权重
     base_dir = f"../utils/trained_model/{data_name}{num_classes}"
     for model_obj, fname in zip([model_varcnn, model_lstm, model_df],
                                 ["varcnn.pkl", "lstm.pkl", "df.pkl"]):
         path = os.path.join(base_dir, fname)
         if os.path.exists(path):
             model_obj.load_state_dict(torch.load(path, map_location=device))
-            print(f"✅ Loaded {fname} weights from {path}")
+            print(f"Loaded {fname} weights from {path}")
         else:
-            print(f"⚠ {fname} not found — using random init")
+            print(f"{fname} not found — using random init")
 
-    # 5️⃣ 构建加权投票 ensemble
+    # 5 构建加权投票 ensemble
     ensemble = Tor_ensemble_model(model_varcnn, model_lstm, model_df).to(device)
 
-    # 6️⃣ 冻结子模型
+    # 6 冻结子模型
     for p in ensemble.model1.parameters():
         p.requires_grad = False
     for p in ensemble.model2.parameters():
@@ -61,7 +61,7 @@ def train_ensemble(learn_param, data_name, num_classes, config_path="My_tor.conf
     for p in ensemble.model3.parameters():
         p.requires_grad = False
 
-    # 7️⃣ 构建 optimizer，仅训练权重
+    # 7 构建 optimizer，仅训练权重
     optimizer_name = learn_param['optimizer']
     lr = learn_param[optimizer_name].as_float('learning_rate')
     optimizer = {
@@ -77,11 +77,11 @@ def train_ensemble(learn_param, data_name, num_classes, config_path="My_tor.conf
     epochs = learn_param.as_int('nb_epochs')
 
     log_info(data_name, num_classes, "ensemble",
-             f"🚀 Ensemble weighted training started | Optimizer={optimizer_name}, lr={lr}")
+             f"Ensemble weighted training started | Optimizer={optimizer_name}, lr={lr}")
     total_trainable = sum(p.numel() for p in ensemble.parameters() if p.requires_grad)
-    print(f"🔧 Trainable parameters (weights only): {total_trainable}")
+    print(f"Trainable parameters (weights only): {total_trainable}")
 
-    # 8️⃣ 训练循环
+    # 8 训练循环
     best_f1 = 0.0
     s_time = time.time()
     for epoch in range(1, epochs + 1):
@@ -113,17 +113,17 @@ def train_ensemble(learn_param, data_name, num_classes, config_path="My_tor.conf
             save_path = os.path.join(base_dir, "ensemble.pkl")
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             torch.save(ensemble.state_dict(), save_path)
-            print(colored(f"💾 New best ensemble saved! F1={best_f1:.3f}", "green"))
+            print(colored(f" New best ensemble saved! F1={best_f1:.3f}", "green"))
             log_info(data_name, num_classes, "ensemble",
-                     f"✅ Saved model (F1={best_f1:.3f}) to {save_path}")
+                     f" Saved model (F1={best_f1:.3f}) to {save_path}")
 
-    # 9️⃣ 测试集评估
+    # 9 测试集评估
     ensemble.eval()
     acc, recall, precision, f1 = test_metrics(ensemble, test_loader)
     print(colored(
-        f"🎯 Final Test | Acc={acc:.3f}, Recall={recall:.3f}, Precision={precision:.3f}, F1={f1:.3f}",
+        f" Final Test | Acc={acc:.3f}, Recall={recall:.3f}, Precision={precision:.3f}, F1={f1:.3f}",
         "yellow"))
-    print(f"🎯 Final Weights: {ensemble.weights.data.cpu().numpy()}")
+    print(f" Final Weights: {ensemble.weights.data.cpu().numpy()}")
 
     train_time = time.time() - s_time
     analyze_model_performance(

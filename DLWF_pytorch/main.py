@@ -101,7 +101,7 @@ def train(model, learn_param, data_name, model_name, num_classes):
             # === 模型保存 ===
             if f1 > best_f1:
                 best_f1 = f1
-                save_path = f"../utils/trained_model/{data_name}{num_classes}/{model_name}.pkl"
+                save_path = f"../utils/trained_model/{data_name}{num_classes}/{model_name}2.pkl"
                 os.makedirs(os.path.dirname(save_path), exist_ok=True)
                 torch.save(model.state_dict(), save_path)
                 print(colored(f"💾 New best model saved! F1={f1:.3f}", "green"))
@@ -150,5 +150,5 @@ if __name__ == "__main__":
             # 调用专用 ensemble 训练函数（它会内部构建并加载 VarCNN/DFNet/Tor_lstm）
             train_ensemble(learn_param, data_name, num_classes)
         else:
-            model = build_model_instance(model_name, num_classes, config).to(device)
+            model = build_model_instance(model_name, args.dataset, config).to(device)
             train(model, learn_param, data_name, model_name, num_classes)

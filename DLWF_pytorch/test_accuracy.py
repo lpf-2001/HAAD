@@ -1,9 +1,12 @@
 from train_utils import *
 
 
+
+
+
 model_type = 'awf'
-dataset = "sirinam"
-num_classes = str(95)
+dataset = "rimmer"
+num_classes = str(100)
 config = ConfigObj("My_tor.conf")
 learn_param = config[model_type]
 model = build_model_instance(model_type, dataset+num_classes, config).to(device)

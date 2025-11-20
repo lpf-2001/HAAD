@@ -1,0 +1,402 @@
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.384
+DSR: 0.5844155844155845
+Recall: 0.384
+Precision: 0.36208412698412695
+F1-score: 0.3445333333333333
+Average injected packets per trace: 48.072
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.412
+DSR: 0.5541125541125542
+Recall: 0.412
+Precision: 0.3967688644688645
+F1-score: 0.36770091896407686
+Average injected packets per trace: 46.628
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.62
+DSR: 0.3290043290043291
+Recall: 0.62
+Precision: 0.6329206349206351
+F1-score: 0.5906614718614719
+Average injected packets per trace: 38.964
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.912
+DSR: 0.012987012987012991
+Recall: 0.912
+Precision: 0.9235333333333334
+F1-score: 0.9051523809523809
+Average injected packets per trace: 14.012
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.768
+DSR: 0.1688311688311689
+Recall: 0.768
+Precision: 0.8011333333333334
+F1-score: 0.7617619047619048
+Average injected packets per trace: 27.944
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.504
+DSR: 0.4545454545454546
+Recall: 0.504
+Precision: 0.4765476190476191
+F1-score: 0.45723434343434344
+Average injected packets per trace: 58.144
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.564
+DSR: 0.38961038961038974
+Recall: 0.564
+Precision: 0.5704523809523809
+F1-score: 0.530189898989899
+Average injected packets per trace: 44.924
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.724
+DSR: 0.21645021645021656
+Recall: 0.724
+Precision: 0.7367523809523808
+F1-score: 0.6974222222222222
+Average injected packets per trace: 42.228
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.9
+DSR: 0.025974025974025983
+Recall: 0.9
+Precision: 0.9090666666666667
+F1-score: 0.8901333333333333
+Average injected packets per trace: 14.936
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.792
+DSR: 0.1428571428571429
+Recall: 0.792
+Precision: 0.8040095238095237
+F1-score: 0.7721238095238097
+Average injected packets per trace: 17.44
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.796
+DSR: 0.1385281385281385
+Recall: 0.796
+Precision: 0.8098095238095239
+F1-score: 0.7774095238095239
+Average injected packets per trace: 17.632
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.776
+DSR: 0.1601731601731602
+Recall: 0.776
+Precision: 0.7824333333333334
+F1-score: 0.7547359307359308
+Average injected packets per trace: 18.124
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.728
+DSR: 0.21212121212121215
+Recall: 0.728
+Precision: 0.7273333333333334
+F1-score: 0.7070476190476191
+Average injected packets per trace: 24.5
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.688
+DSR: 0.25541125541125553
+Recall: 0.688
+Precision: 0.6730666666666666
+F1-score: 0.6584190476190477
+Average injected packets per trace: 31.132
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.632
+DSR: 0.3160173160173161
+Recall: 0.632
+Precision: 0.6491873015873015
+F1-score: 0.6040805194805196
+Average injected packets per trace: 39.648
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.624
+DSR: 0.3246753246753247
+Recall: 0.624
+Precision: 0.638920634920635
+F1-score: 0.5955948051948052
+Average injected packets per trace: 39.264
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.624
+DSR: 0.3246753246753247
+Recall: 0.624
+Precision: 0.638920634920635
+F1-score: 0.5955948051948052
+Average injected packets per trace: 39.224
+
+rimmer100 dataset DFD attack results:
+Accuracy before attack: 0.924
+Accuracy after attack: 0.676
+DSR: 0.2683982683982684
+Recall: 0.676
+Precision: 0.6605142857142857
+F1-score: 0.6418253968253969
+Average injected packets per trace: 34.68
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 0.32, down_disturbance_rate: 0.23
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.6210526315789474
+DSR: 0.2804878048780487
+Recall: 0.6210526315789474
+Precision: 0.5587719298245615
+F1-score: 0.5778947368421053
+Average injected packets per trace: 31.042105263157893
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 0.32, down_disturbance_rate: 0.25
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.6
+DSR: 0.30487804878048785
+Recall: 0.6
+Precision: 0.5122807017543859
+F1-score: 0.5398496240601504
+Average injected packets per trace: 35.915789473684214
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 0.4, down_disturbance_rate: 0.25
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.6210526315789474
+DSR: 0.2804878048780487
+Recall: 0.6210526315789474
+Precision: 0.5280701754385966
+F1-score: 0.5578947368421052
+Average injected packets per trace: 36.357894736842105
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 0.4, down_disturbance_rate: 0.3
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.5789473684210527
+DSR: 0.3292682926829268
+Recall: 0.5789473684210527
+Precision: 0.4701754385964912
+F1-score: 0.5035087719298245
+Average injected packets per trace: 41.32631578947368
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 0.44, down_disturbance_rate: 0.3
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.5789473684210527
+DSR: 0.3292682926829268
+Recall: 0.5789473684210527
+Precision: 0.47543859649122805
+F1-score: 0.507017543859649
+Average injected packets per trace: 41.56842105263158
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 0.44, down_disturbance_rate: 0.32
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.5578947368421052
+DSR: 0.35365853658536595
+Recall: 0.5578947368421052
+Precision: 0.44824561403508767
+F1-score: 0.4814035087719298
+Average injected packets per trace: 43.48421052631579
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 0.9, down_disturbance_rate: 0.1
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.5052631578947369
+DSR: 0.41463414634146345
+Recall: 0.5052631578947369
+Precision: 0.4114035087719298
+F1-score: 0.439298245614035
+Average injected packets per trace: 26.705263157894738
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 0.9, down_disturbance_rate: 0.1
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.5052631578947369
+DSR: 0.41463414634146345
+Recall: 0.5052631578947369
+Precision: 0.4114035087719298
+F1-score: 0.439298245614035
+Average injected packets per trace: 26.705263157894738
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 0.7, down_disturbance_rate: 0.3
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.47368421052631576
+DSR: 0.451219512195122
+Recall: 0.47368421052631576
+Precision: 0.3798245614035088
+F1-score: 0.407719298245614
+Average injected packets per trace: 48.189473684210526
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.5, down_disturbance_rate: 0.3
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.2736842105263158
+DSR: 0.6829268292682926
+Recall: 0.2736842105263158
+Precision: 0.17280701754385963
+F1-score: 0.1986967418546366
+Average injected packets per trace: 62.421052631578945
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.1, down_disturbance_rate: 0.1
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.4842105263157895
+DSR: 0.4390243902439025
+Recall: 0.4842105263157895
+Precision: 0.4017543859649123
+F1-score: 0.4259649122807017
+Average injected packets per trace: 27.757894736842104
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.3, down_disturbance_rate: 0.1
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.3684210526315789
+DSR: 0.5731707317073171
+Recall: 0.3684210526315789
+Precision: 0.29824561403508776
+F1-score: 0.31719298245614036
+Average injected packets per trace: 31.2
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.5, down_disturbance_rate: 0.1
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.25263157894736843
+DSR: 0.7073170731707317
+Recall: 0.25263157894736843
+Precision: 0.2092982456140351
+F1-score: 0.21840510366826157
+Average injected packets per trace: 37.49473684210526
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.5, down_disturbance_rate: 0.2
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.2631578947368421
+DSR: 0.6951219512195121
+Recall: 0.2631578947368421
+Precision: 0.18543859649122807
+F1-score: 0.2049624060150376
+Average injected packets per trace: 49.61052631578947
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1, down_disturbance_rate: 0.3
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.37894736842105264
+DSR: 0.5609756097560976
+Recall: 0.37894736842105264
+Precision: 0.2894736842105263
+F1-score: 0.3175438596491228
+Average injected packets per trace: 52.04210526315789
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.1, down_disturbance_rate: 0.3
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.37894736842105264
+DSR: 0.5609756097560976
+Recall: 0.37894736842105264
+Precision: 0.29210526315789476
+F1-score: 0.3182456140350877
+Average injected packets per trace: 52.68421052631579
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.2, down_disturbance_rate: 0.3
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.35789473684210527
+DSR: 0.5853658536585367
+Recall: 0.35789473684210527
+Precision: 0.2833333333333333
+F1-score: 0.30421052631578943
+Average injected packets per trace: 54.0
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.2, down_disturbance_rate: 0.3
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.3263157894736842
+DSR: 0.6219512195121951
+Recall: 0.3263157894736842
+Precision: 0.2380701754385965
+F1-score: 0.2616040100250626
+Average injected packets per trace: 55.8421052631579
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.5, down_disturbance_rate: 0.2
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.25263157894736843
+DSR: 0.7073170731707317
+Recall: 0.25263157894736843
+Precision: 0.1958020050125313
+F1-score: 0.20812865497076025
+Average injected packets per trace: 50.873684210526314
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.5, down_disturbance_rate: 0.25
+Accuracy before attack: 0.8631578947368421
+Accuracy after attack: 0.18947368421052632
+DSR: 0.7804878048780488
+Recall: 0.18947368421052632
+Precision: 0.14130781499202552
+F1-score: 0.15228070175438596
+Average injected packets per trace: 59.36842105263158
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.5, down_disturbance_rate: 0.25
+Accuracy before attack: 0.9192
+Accuracy after attack: 0.21267368421052632
+DSR: 0.7686317621730566
+Recall: 0.21267368421052632
+Precision: 0.38256136300430355
+F1-score: 0.22008181593259196
+Average injected packets per trace: 57.294526315789476
+
+rimmer100 dataset DFD attack results:
+up_disturbance_rate: 1.5, down_disturbance_rate: 0.25
+Accuracy before attack: 0.9571812596006144
+Accuracy after attack: 0.24532770097286227
+DSR: 0.7436977599465062
+Recall: 0.24532770097286227
+Precision: 0.39721499903563573
+F1-score: 0.2359729341792578
+Average injected packets per trace: 57.25588837685612
+
+rimmer100 dataset DFD attack results:
+up_disturbance_rate: 1.5, down_disturbance_rate: 0.25
+Accuracy before attack: 0.9571812596006144
+Accuracy after attack: 0.24532770097286227
+DSR: 0.7436977599465062
+Recall: 0.24532770097286227
+Precision: 0.39721499903563573
+F1-score: 0.2359729341792578
+Average injected packets per trace: 57.25588837685612
+
+sirinam95 dataset DFD attack results:
+up_disturbance_rate: 1.5, down_disturbance_rate: 0.25
+Accuracy before attack: 0.9192
+Accuracy after attack: 0.21267368421052632
+DSR: 0.7686317621730566
+Recall: 0.21267368421052632
+Precision: 0.38256136300430355
+F1-score: 0.22008181593259196
+Average injected packets per trace: 57.294526315789476
+

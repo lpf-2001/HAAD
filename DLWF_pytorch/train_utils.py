@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import torch
-import datetime
+from datetime import datetime, timezone, timedelta   #  只导入需要的类
 import time
 from configobj import ConfigObj
 import pytz
@@ -10,7 +10,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from model import *
-
+import random
+import numpy as np
 # 自定义模块路径
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils'))
 sys.path.append(parent_dir)
@@ -71,7 +72,7 @@ def load_datasets(data_name, num_classes, learn_param):
 # ==========================================
 # 模型构建
 # ==========================================
-def build_model_instance(model_type, dataset, config):
+def build_model_instance(model_type="ensemble", dataset="rimmer100", config=None):
     data_name, num_classes = split_alpha_number(dataset)
     if model_type == "cnn":
         return Tor_cnn(200, num_classes)
@@ -115,9 +116,9 @@ def build_model_instance(model_type, dataset, config):
             path = os.path.join(base_dir, fname)
             if os.path.exists(path):
                 model_obj.load_state_dict(torch.load(path, map_location=device))
-                print(f"✅ Loaded {fname} weights from {path}")
+                print(f" Loaded {fname} weights from {path}")
             else:
-                print(f"⚠ {fname} not found — using random init")
+                print(f" {fname} not found — using random init")
             
         
         
@@ -168,13 +169,13 @@ def analyze_model_performance(model, dataloader, dataset_name, num_classes, mode
     model.eval()
     model.to(device)
 
-    # === 1️⃣ 模型参数统计 ===
+    # === 1 模型参数统计 ===
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     torch.save(model.state_dict(), "temp_model.pth")
     model_size_mb = os.path.getsize("temp_model.pth") / (1024 * 1024)
     os.remove("temp_model.pth")
 
-    # === 2️⃣ 推理延迟统计 ===
+    # === 2 推理延迟统计 ===
     dummy_input = next(iter(dataloader))[0].float().to(device)[:1]  # 取一个样本
     with torch.no_grad():
         for _ in range(warmup):  # 预热
@@ -190,7 +191,7 @@ def analyze_model_performance(model, dataloader, dataset_name, num_classes, mode
     avg_latency = (end - start) / repeat
     throughput = 1.0 / avg_latency
 
-    # === 3️⃣ 性能指标统计 ===
+    # === 3 性能指标统计 ===
     all_preds, all_labels = [], []
     with torch.no_grad():
         for x, y in dataloader:
@@ -205,34 +206,34 @@ def analyze_model_performance(model, dataloader, dataset_name, num_classes, mode
     precision = precision_score(all_labels, all_preds, average='weighted')
     f1 = f1_score(all_labels, all_preds, average='weighted')
 
-    # === 4️⃣ 输出报告 ===
+    # === 4 输出报告 ===
     report = (
-    f"\n📊 ====== Model Performance Summary ======\n"
-    f"📁 Dataset: {dataset_name}{num_classes}\n"
-    f"🧠 Model: {model_name}\n"
+    f"\n ====== Model Performance Summary ======\n"
+    f" Dataset: {dataset_name}{num_classes}\n"
+    f" Model: {model_name}\n"
     f"-------------------------------------------\n"
-    f"🔢 Trainable Params: {num_params:,}\n"
-    f"💾 Model Size: {model_size_mb:.2f} MB\n"
-    f"⚙️  Avg Inference Latency: {avg_latency * 1000:.3f} ms\n"
-    f"🚀 Throughput: {throughput:.2f} samples/s\n"
+    f" Trainable Params: {num_params:,}\n"
+    f" Model Size: {model_size_mb:.2f} MB\n"
+    f" Avg Inference Latency: {avg_latency * 1000:.3f} ms\n"
+    f" Throughput: {throughput:.2f} samples/s\n"
     )
 
     if train_time:
-        report += f"🕒 Training Time: {train_time:.2f}s\n"
+        report += f" Training Time: {train_time:.2f}s\n"
 
     report += (
         f"-------------------------------------------\n"
-        f"✅ Accuracy:  {acc:.4f}\n"
-        f"📈 Recall:    {recall:.4f}\n"
-        f"🎯 Precision: {precision:.4f}\n"
-        f"🏆 F1-score:  {f1:.4f}\n"
+        f" Accuracy:  {acc:.4f}\n"
+        f" Recall:    {recall:.4f}\n"
+        f" Precision: {precision:.4f}\n"
+        f" F1-score:  {f1:.4f}\n"
         f"===========================================\n"
     )
 
 
     print(report)
 
-    # === 5️⃣ 写入日志文件 ===
+    # === 5 写入日志文件 ===
     if log_path is None:
         log_path = f"../utils/trained_model/{dataset_name}{num_classes}/{dataset_name}_{model_name}_summary.out"
     with open(log_path, "a") as f:
@@ -274,9 +275,9 @@ def evaluate_ensemble_vs_single(m1, m2, m3, dataname, num_classes, dataloader, d
         path = os.path.join(base_dir, fname)
         if os.path.exists(path):
             model_obj.load_state_dict(torch.load(path, map_location=device))
-            print(f"✅ Loaded {fname} weights from {path}")
+            print(f" Loaded {fname} weights from {path}")
         else:
-            print(f"⚠ {fname} not found — using random init")
+            print(f" {fname} not found — using random init")
 
 
     
@@ -333,26 +334,38 @@ def evaluate_ensemble_vs_single(m1, m2, m3, dataname, num_classes, dataloader, d
                     degrade_count += 1
 
             total += y.size(0)
-    log_info(dataname, num_classes, "ensemble_vs_single", "===== ✅ 集成 vs 单模型 对比结果 =====")
-    log_info(dataname, num_classes, "ensemble_vs_single", f"✔ Dataset: {dataname}{num_classes}")
-    log_info(dataname, num_classes, "ensemble_vs_single", f"✔ Ensemble  Acc: {correct_ens/total:.4f}")
-    log_info(dataname, num_classes, "ensemble_vs_single", f"✔ {m1}    Acc: {correct_m1/total:.4f}")
-    log_info(dataname, num_classes, "ensemble_vs_single", f"✔ {m2}    Acc: {correct_m2/total:.4f}")
-    log_info(dataname, num_classes, "ensemble_vs_single", f"✔ {m3}      Acc: {correct_m3/total:.4f}")
+    log_info(dataname, num_classes, "ensemble_vs_single", "=====  集成 vs 单模型 对比结果 =====")
+    log_info(dataname, num_classes, "ensemble_vs_single", f" Dataset: {dataname}{num_classes}")
+    log_info(dataname, num_classes, "ensemble_vs_single", f" Ensemble  Acc: {correct_ens/total:.4f}")
+    log_info(dataname, num_classes, "ensemble_vs_single", f" {m1}    Acc: {correct_m1/total:.4f}")
+    log_info(dataname, num_classes, "ensemble_vs_single", f" {m2}    Acc: {correct_m2/total:.4f}")
+    log_info(dataname, num_classes, "ensemble_vs_single", f" {m3}      Acc: {correct_m3/total:.4f}")
     log_info(dataname, num_classes, "ensemble_vs_single", "--------------------------------------")
-    log_info(dataname, num_classes, "ensemble_vs_single", f"🔹 修正错误样本数 (单模型错，但集成对) : {fix_count}")
-    log_info(dataname, num_classes, "ensemble_vs_single", f"🔸 退化样本数   (单模型对，但集成错) : {degrade_count}")
-    log_info(dataname, num_classes, "ensemble_vs_single", f"🔹 提升比例: {fix_count / total:.4f}")
-    log_info(dataname, num_classes, "ensemble_vs_single", f"🔸 退化比例: {degrade_count / total:.4f}")
+    log_info(dataname, num_classes, "ensemble_vs_single", f" 修正错误样本数 (单模型错，但集成对) : {fix_count}")
+    log_info(dataname, num_classes, "ensemble_vs_single", f" 退化样本数   (单模型对，但集成错) : {degrade_count}")
+    log_info(dataname, num_classes, "ensemble_vs_single", f" 提升比例: {fix_count / total:.4f}")
+    log_info(dataname, num_classes, "ensemble_vs_single", f" 退化比例: {degrade_count / total:.4f}")
 
 
-    print("===== ✅ 集成 vs 单模型 对比结果 =====")
-    print(f"✔ Ensemble  Acc: {correct_ens/total:.4f}")
-    print(f"✔ {m1}    Acc: {correct_m1/total:.4f}")
-    print(f"✔ {m2}    Acc: {correct_m2/total:.4f}")
-    print(f"✔ {m3}      Acc: {correct_m3/total:.4f}")
+    print("=====  集成 vs 单模型 对比结果 =====")
+    print(f" Ensemble  Acc: {correct_ens/total:.4f}")
+    print(f" {m1}    Acc: {correct_m1/total:.4f}")
+    print(f" {m2}    Acc: {correct_m2/total:.4f}")
+    print(f" {m3}      Acc: {correct_m3/total:.4f}")
     print("--------------------------------------")
-    print(f"🔹 修正错误样本数 (单模型错，但集成对) : {fix_count}")
-    print(f"🔸 退化样本数   (单模型对，但集成错) : {degrade_count}")
-    print(f"🔹 提升比例: {fix_count / total:.4f}")
-    print(f"🔸 退化比例: {degrade_count / total:.4f}")
+    print(f" 修正错误样本数 (单模型错，但集成对) : {fix_count}")
+    print(f" 退化样本数   (单模型对，但集成错) : {degrade_count}")
+    print(f" 提升比例: {fix_count / total:.4f}")
+    print(f" 退化比例: {degrade_count / total:.4f}")
+
+
+def set_seed(seed=2025):
+    
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    print(f"[Seed Fixed] Using random seed = {seed}")

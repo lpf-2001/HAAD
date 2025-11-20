@@ -7,7 +7,7 @@ from configobj import ConfigObj
 import torch.optim as optim
 import os
 from tqdm import tqdm
-from datetime import *
+from datetime import datetime, timezone, timedelta
 from torch.utils.data import DataLoader
 from HAAD_utils import *
 
@@ -16,20 +16,19 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.append(parent_dir)
 from utils.data import *
 from HAAD_ import *
+from DLWF_pytorch.train_utils import *
 from DLWF_pytorch.model import *
-from U_perturbation import run_improved_universal_selector  # ✅ 使用改进版
-
-
-
-
-
-
+from U_perturbation import run_universal_selector  
 
 
 # ============================================================
 #   主函数入口
 # ============================================================
-def main(base_patch_nums = 8):
+def main(base_patch_nums = 8,alpha=0.9):
+    tz = timezone(timedelta(hours=8))
+    now = datetime.now(tz)
+    print(now.strftime("%Y-%m-%d %H:%M:%S"))
+
     dirname = os.path.dirname(os.path.abspath(__file__))
     print(dirname)
     
@@ -95,7 +94,9 @@ def main(base_patch_nums = 8):
         model=S_model,          # 模型
         num_ants=15,          # 蚂蚁数量（影响搜索广度）
         patches=base_patch_nums,  # 基础patch数量
-        max_iters=50       # 最大迭代次数
+        max_iters=50,       # 最大迭代次数
+        diffusion_radius=3,
+        diffusion_radius2=1
 
     )
     
@@ -130,16 +131,15 @@ def main(base_patch_nums = 8):
     print("Step 2: 运行改进的Universal Patch Selector")
     print("="*80)
     
-    top_patches = run_improved_universal_selector(
+    top_patches = run_universal_selector(
         S_model=S_model,
         device=device,
         generate_adv_trace_fn=generate_adv_trace,
         haad_results=haad_results,
         eval_batches=eval_batches,
-        k=base_patch_nums,                      # 选择10个patches
-        global_weight=0.9,         # 全局贡献权重
-        local_weight=0.1,          # 局部贡献权重
-        individual_weight=0,     # 独立效果权重
+        k=base_patch_nums,                      # 选择num个patches
+        global_weight=alpha,         # 全局贡献权重
+        local_weight=1-alpha,          # 局部贡献权重 0.9
         overlap_threshold=0.5,     # 位置重叠阈值
         strategy='greedy_diverse'  # 选择策略
     )
@@ -171,13 +171,14 @@ def main(base_patch_nums = 8):
     print(f"  总开销 (插入tokens): {cost}")
 
     # ------------------- 保存结果 -------------------
-    result_file = f"{dataset}_universal_summary_improved.txt"
+    result_file = f"{dataset}_universal_comparison.txt"
     with open(result_file, "a") as f:
         tz = timezone(timedelta(hours=8))
         now = datetime.now(tz)
         f.write(f"{'='*80}\n")
         f.write(f"[{now.strftime('%Y-%m-%d %H:%M:%S')}]\n")
         f.write(f"Dataset: {dataset}\n")
+        f.write(f"alpha:{alpha}\n")
         f.write(f"S_model: {s_model}\n")
         f.write(f"V_model: {v_model}\n")
         f.write(f"Params: patch_nums={base_patch_nums}, numant={numant}, "
@@ -200,40 +201,20 @@ def main(base_patch_nums = 8):
 # from pyinstrument import Profiler
 
 
-def set_seed(seed=2025):
-    
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    os.environ["PYTHONHASHSEED"] = str(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    print(f"[Seed Fixed] Using random seed = {seed}")
+
 
 
 
 if __name__ == "__main__":
-    # set_seed(2025)  # ✅ 固定随机种子
-    parser = argparse.ArgumentParser(
-        description='Improved Universal Perturbation with Conflict Detection'
-    )
-    parser.add_argument('--model', '-m', default='ensemble', type=str, 
-                       help='Surrogate model name')
-    parser.add_argument('--verifi_model', '-vm', default='ensemble', type=str,
-                       help='Victim model name')
-    parser.add_argument('--dataset', '-d', default='sirinam95', type=str,
-                       help='Dataset name')
+    parser = get_args()
     args = parser.parse_args()
 
     s_model = args.model
     v_model = args.verifi_model
     dataset = args.dataset
     config = ConfigObj("../DLWF_pytorch/My_tor.conf")
-    
-    # profiler=Profiler()
-    # profiler.start()
-    
-    for i in range(5,9):
+    set_seed(args.seed)  # ✅ 固定随机种子
+
+    for i in range(args.start_patch,args.end_patch):
         main(i)
-    # profiler.stop()
+
