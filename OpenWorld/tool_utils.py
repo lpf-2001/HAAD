@@ -1,8 +1,10 @@
 import os
 import re
 import sys
+project_path=os.getcwd()
+sys.path.append(project_path)
 import torch
-import datetime
+from datetime import datetime, timezone, timedelta   # ✅ 只导入需要的类
 import time
 from configobj import ConfigObj
 import pytz
@@ -10,12 +12,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from model import *
-
-# 自定义模块路径
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils'))
-sys.path.append(parent_dir)
-
-from data import *
+import random
+import numpy as np
 
 # ==========================================
 # 辅助函数
@@ -38,40 +36,11 @@ def log_info(dataset, num_classes, model_name, msg, id=None):
         f.write(f"{prefix}{msg}\n")
         
         
-        
-# ==========================================
-# 数据加载
-# ==========================================
-def load_datasets(data_name, num_classes, learn_param):
-    val_ratio = learn_param.as_float('val_ratio')
-    test_ratio = learn_param.as_float('test_ratio')
-
-    if data_name == "sirinam":
-        loader = LoadDataNoDefCW
-    elif data_name == "rimmer":
-        loader = load_rimmer_dataset
-    else:
-        raise ValueError(f"Unknown dataset name: {data_name}")
-
-    X_train, y_train, X_valid, y_valid, X_test, y_test = loader(
-        input_size=200, num_classes=num_classes, val_ratio=val_ratio, test_ratio=test_ratio
-    )
-
-    print(f"Train: {X_train.shape}, Valid: {X_valid.shape}, Test: {X_test.shape}")
-
-    batch_size = learn_param.as_int('batch_size')
-    return (
-        DataLoader(MyDataset(X_train, y_train), batch_size=batch_size, shuffle=True),
-        DataLoader(MyDataset(X_valid, y_valid), batch_size=batch_size, shuffle=False),
-        DataLoader(MyDataset(X_test, y_test), batch_size=batch_size, shuffle=False),
-    )
-
-
 
 # ==========================================
 # 模型构建
 # ==========================================
-def build_model_instance(model_type, dataset, config):
+def build_model_instance(model_type="ensemble", dataset="rimmer100", config=None):
     data_name, num_classes = split_alpha_number(dataset)
     if model_type == "cnn":
         return Tor_cnn(200, num_classes)
@@ -207,15 +176,20 @@ def analyze_model_performance(model, dataloader, dataset_name, num_classes, mode
 
     # === 4️⃣ 输出报告 ===
     report = (
-        f"\n📊 ====== Model Performance Summary ======\n"
-        f"📁 Dataset: {dataset_name}{num_classes}\n"
-        f"🧠 Model: {model_name}\n"
-        f"-------------------------------------------\n"
-        f"🔢 Trainable Params: {num_params:,}\n"
-        f"💾 Model Size: {model_size_mb:.2f} MB\n"
-        f"⚙️  Avg Inference Latency: {avg_latency * 1000:.3f} ms\n"
-        f"🚀 Throughput: {throughput:.2f} samples/s\n"
-        f"🕒 Training Time: {train_time:.2f}s\n" if train_time else "" +
+    f"\n📊 ====== Model Performance Summary ======\n"
+    f"📁 Dataset: {dataset_name}{num_classes}\n"
+    f"🧠 Model: {model_name}\n"
+    f"-------------------------------------------\n"
+    f"🔢 Trainable Params: {num_params:,}\n"
+    f"💾 Model Size: {model_size_mb:.2f} MB\n"
+    f"⚙️  Avg Inference Latency: {avg_latency * 1000:.3f} ms\n"
+    f"🚀 Throughput: {throughput:.2f} samples/s\n"
+    )
+
+    if train_time:
+        report += f"🕒 Training Time: {train_time:.2f}s\n"
+
+    report += (
         f"-------------------------------------------\n"
         f"✅ Accuracy:  {acc:.4f}\n"
         f"📈 Recall:    {recall:.4f}\n"
@@ -223,6 +197,7 @@ def analyze_model_performance(model, dataloader, dataset_name, num_classes, mode
         f"🏆 F1-score:  {f1:.4f}\n"
         f"===========================================\n"
     )
+
 
     print(report)
 
@@ -350,3 +325,15 @@ def evaluate_ensemble_vs_single(m1, m2, m3, dataname, num_classes, dataloader, d
     print(f"🔸 退化样本数   (单模型对，但集成错) : {degrade_count}")
     print(f"🔹 提升比例: {fix_count / total:.4f}")
     print(f"🔸 退化比例: {degrade_count / total:.4f}")
+
+
+def set_seed(seed=2025):
+    
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    print(f"[Seed Fixed] Using random seed = {seed}")

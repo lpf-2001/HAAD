@@ -8,19 +8,18 @@ from torch.utils.data import DataLoader, TensorDataset
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Tor_cnn(nn.Module):
-    def __init__(self, in_dim, out_dim):
+    def __init__(self):
         super(Tor_cnn,self).__init__()
-        self.dropout = nn.Dropout(p=0.1)
+        self.dropout = nn.Dropout(p=0.25)
         self.conv1 = nn.Conv1d(in_channels=1, out_channels=32,kernel_size=2,padding='valid',stride=1)
         self.conv2 = nn.Conv1d(in_channels=32, out_channels=64,kernel_size=2,padding='valid',stride=1)
         self.conv3 = nn.Conv1d(in_channels=64, out_channels=128,kernel_size=4,padding='valid',stride=1)
-        self.conv4 = nn.Conv1d(in_channels=128, out_channels=256,kernel_size=2,padding='valid',stride=1)
-        self.conv5 = nn.Conv1d(in_channels=256, out_channels=128,kernel_size=2,padding='valid',stride=1)
+        self.conv4 = nn.Conv1d(in_channels=128, out_channels=128,kernel_size=2,padding='valid',stride=1)
         self.maxpool1 = nn.MaxPool1d(kernel_size=2,padding=0)
         self.lstm = nn.LSTM(input_size=22, hidden_size=64, num_layers=1, batch_first=True)
-        self.dense1 = nn.Linear(in_features=640, out_features=256)
+        self.dense1 = nn.Linear(in_features=1408, out_features=256)
         self.dense2 = nn.Linear(in_features=256, out_features=128)
-        self.dense3 = nn.Linear(in_features=128, out_features=out_dim)
+        self.dense3 = nn.Linear(in_features=128, out_features=100)
     def forward(self,x):
   
         x = x.transpose(1,2)
@@ -37,9 +36,6 @@ class Tor_cnn(nn.Module):
         x = self.conv4(x)
         x = nn.functional.relu(x)
         x = self.maxpool1(x)
-        x = self.conv5(x)
-        x = nn.functional.relu(x)
-        x = self.maxpool1(x)
         # x, (hn, cn) = self.lstm(x)
         # x = x[:,-1,:]
         # print(x.shape)
@@ -47,8 +43,8 @@ class Tor_cnn(nn.Module):
         x = self.dense1(x)
         x = self.dense2(x)
         x = self.dense3(x)
-        # x = torch.sigmoid(x)
-        
+        x = torch.sigmoid(x)
+        x = nn.functional.softmax(x,dim=-1)
         return x
         
         
@@ -78,7 +74,6 @@ class Tor_lstm(nn.Module):
         out = self.fc(out[:, -1, :])  # 使用序列的最后一个时间步的输出作为全连接层的输入
         return out
     
-
 
 
 
@@ -137,11 +132,11 @@ def train_model(i, train_loader,autoencoder,layer):
     autoencoder.train()
     # Select the optimizer
     if optimizer_type == 'sgd':
-        optimizer = optim.SGD(autoencoder.parameters(), lr=layer['sgd'].as_float('learning_rate'), momentum=layer['sgd'].as_float('momentum'), weight_decay=layer['sgd'].as_float('decay'))
-    elif optimizer_type == 'adamax':
-        optimizer = optim.Adamax(autoencoder.parameters(), lr=layer['adamax'].as_float('learning_rate'))
+        optimizer = optim.SGD(autoencoder.parameters(), lr=layer['sgd'].as_float('lr'), momentum=layer['sgd'].as_float('momentum'), weight_decay=layer['sgd'].as_float('decay'))
+    elif optimizer_type == 'adam':
+        optimizer = optim.Adam(autoencoder.parameters(), lr=layer['adam'].as_float('lr'), weight_decay=layer['adam'].as_float('decay'))
     elif optimizer_type == 'rmsprop':
-        optimizer = optim.RMSprop(autoencoder.parameters(), lr=layer['rmsprop'].as_float('learning_rate'))
+        optimizer = optim.RMSprop(autoencoder.parameters(), lr=layer['rmsprop'].as_float('lr'), weight_decay=layer['rmsprop'].as_float('decay'))
 
     criterion = nn.MSELoss()
     autoencoder.train()
@@ -227,8 +222,9 @@ def make_layer(i, layer,  train_loader, test_loader, steps=0, gen=False):
 
     return train_loader, test_loader, weights
 
-def build_model(learn_params, train_gen, test_gen, steps=0, pre_train=True, nb_classes=95):
+def build_model(learn_params, train_gen, test_gen, steps=0, pre_train=True):
     layers = learn_params["layers"]
+    nb_classes = learn_params.as_int('nb_classes')
     sae = StackedAutoencoder(layers,nb_classes=nb_classes).to(device)
     
     if pre_train:
@@ -240,43 +236,49 @@ def build_model(learn_params, train_gen, test_gen, steps=0, pre_train=True, nb_c
     
     return sae
 
-
-
-    
-    
-
-
 class Tor_ensemble_model(nn.Module):
-    """加权投票式集成模型，权重可训练"""
-    def __init__(self, model1, model2, model3, temperature=1.0):
-        super().__init__()
+    def __init__(self,model1,model2,model3):
+        super(Tor_ensemble_model, self).__init__()
+        self.fc1 = nn.Linear(in_features=100, out_features=100, bias=False)
+        self.fc2 = nn.Linear(in_features=100, out_features=100, bias=False)
+        self.fc3 = nn.Linear(in_features=100, out_features=100, bias=False)
         self.model1 = model1
         self.model2 = model2
         self.model3 = model3
-        # 可训练权重
-        w_init = torch.tensor([1/3, 1/3, 1/3], dtype=torch.float32)
-        self.weights = nn.Parameter(w_init)
-        # 可训练温度
-        self.temperature = nn.Parameter(torch.tensor(float(temperature)))
 
-    def forward(self, x):
-        # logits 级融合，保留梯度
-        z1 = self.model1(x)
-        z2 = self.model2(x)
-        z3 = self.model3(x)
-
-        # 可训练权重 softmax
-        w = torch.softmax(self.weights, dim=0)
-        z_ens = w[0] * z1 + w[1] * z2 + w[2] * z3
-
-        # 温度缩放，保证梯度平滑
-        T = torch.clamp(self.temperature, min=1e-3)
-        out = z_ens / T
-        return out
-
-
-
+    def forward(self, x):    
     
+        x2 = self.model2(x)  #接受（batch_size,200,1） 
+
+        x1 = self.model1(x)  
+        x3 = self.model3(x)
+        # print(f"x1 shape:{x1.shape}")
+    
+        # 为每个张量应用不同的全连接层
+        weighted_tensor1 = torch.sum(self.fc1(x1),0)/(x1.shape[0])
+        # print(f"weight1 shape:{weighted_tensor1.shape}")
+        weighted_tensor2 = torch.sum(self.fc1(x2),0)/(x1.shape[0])
+        weighted_tensor3 = torch.sum(self.fc1(x3),0)/(x1.shape[0])
+        weighted_tensor1 = weighted_tensor1.expand(x1.shape[0],x1.shape[1])
+        weighted_tensor2 = self.fc2(x2).expand(x1.shape[0],x1.shape[1])
+        weighted_tensor3 = self.fc3(x3).expand(x1.shape[0],x1.shape[1])
+        # print(f"weight2 shape:{weighted_tensor1.shape}")
+
+
+
+
+        # 对每个张量应用相应的权重进行逐元素相乘
+        result1 = x1 * weighted_tensor1
+        result2 = x2 * weighted_tensor2
+        result3 = x3 * weighted_tensor3
+
+        # 如果需要，可以将结果合并，例如逐元素求和
+        final_result = result1 + result2 + result3
+        return final_result
+
+
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -475,57 +477,3 @@ class DFNet(nn.Module):
 
 
 
-class AWFNet(nn.Module):
-    def __init__(self, num_classes=100):
-        super(AWFNet, self).__init__()
-        dropout = 0.1
-        filters = 64
-        kernel_size = 5
-        stride_size = 1
-        pool_size = 2
-
-        # 对应 Keras Dropout(input_shape=input_shape)
-        # 输入: (batch, 1, 200)
-        self.dropout = nn.Dropout(p=dropout)
-
-        # Block 1
-        self.block1_conv = nn.Conv1d(in_channels=1, out_channels=filters,
-                                     kernel_size=kernel_size, stride=stride_size, padding=0)
-        self.block1_pool = nn.MaxPool1d(kernel_size=pool_size, stride=pool_size)
-
-        # Block 2
-        self.block2_conv = nn.Conv1d(in_channels=filters, out_channels=filters,
-                                     kernel_size=kernel_size, stride=stride_size, padding=0)
-        self.block2_pool = nn.MaxPool1d(kernel_size=pool_size, stride=pool_size)
-
-        # Block 3
-        self.block3_conv = nn.Conv1d(in_channels=filters, out_channels=filters,
-                                     kernel_size=kernel_size, stride=stride_size, padding=0)
-        self.block3_pool = nn.MaxPool1d(kernel_size=pool_size, stride=pool_size)
-
-        # Flatten + Dense
-        # 计算 flatten 后的特征维度
-        self._out_dim = self._get_flatten_dim()
-        self.fc = nn.Linear(self._out_dim, num_classes)
-
-    def _get_flatten_dim(self):
-        """通过一次前向传播确定 flatten 维度"""
-        with torch.no_grad():
-            x = torch.zeros(1, 1, 200)  # (batch=1, channel=1, length=200)
-            x = self.block1_pool(F.relu(self.block1_conv(self.dropout(x))))
-            x = self.block2_pool(F.relu(self.block2_conv(x)))
-            x = self.block3_pool(F.relu(self.block3_conv(x)))
-            return x.numel()
-
-    def forward(self, x):
-        # 输入: (batch, 200, 1) → 转为 (batch, 1, 200)
-        if x.shape[1] == 200:
-            x = x.permute(0, 2, 1)
-
-        x = self.dropout(x)
-        x = self.block1_pool(F.relu(self.block1_conv(x)))
-        x = self.block2_pool(F.relu(self.block2_conv(x)))
-        x = self.block3_pool(F.relu(self.block3_conv(x)))
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-        return x
