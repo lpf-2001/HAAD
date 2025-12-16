@@ -24,7 +24,7 @@ def combo_key_from_patches(patches):
 # ==============================
 # 改进的通用扰动选择器
 # ==============================
-class ImprovedUniversalPatchSelector:
+class UniversalPatchSelector:
     """
     改进版通用扰动选择器，解决以下问题：
     1. 避免陷入单一强patch
@@ -492,12 +492,12 @@ class ImprovedUniversalPatchSelector:
 # ==============================
 # 主函数接口
 # ==============================
-def run_improved_universal_selector(S_model, device, generate_adv_trace_fn, 
+def run_universal_selector(S_model, device, generate_adv_trace_fn, 
                                     haad_results, eval_batches, 
                                     k=10, 
-                                    global_weight=0.4,
-                                    local_weight=0.3,
-                                    individual_weight=0.3,
+                                    global_weight=0.5,
+                                    local_weight=0.5,
+                                    individual_weight=0,
                                     overlap_threshold=0.5,
                                     strategy='greedy_diverse'):
     """
@@ -516,7 +516,7 @@ def run_improved_universal_selector(S_model, device, generate_adv_trace_fn,
     返回:
         top_patches: list of [pos, num]
     """
-    selector = ImprovedUniversalPatchSelector(S_model, device, generate_adv_trace_fn)
+    selector = UniversalPatchSelector(S_model, device, generate_adv_trace_fn)
 
     # Step 1: 添加所有候选组合
     for i, patches in enumerate(haad_results):

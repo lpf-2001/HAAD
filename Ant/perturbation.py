@@ -206,15 +206,28 @@ def main(base_patch_nums = 8,alpha=0.9):
 
 
 if __name__ == "__main__":
-    parser = get_args()
+    set_seed(2025)  # 固定随机种子
+    parser = argparse.ArgumentParser(
+        description='Improved Universal Perturbation with Conflict Detection'
+    )
+    parser.add_argument('--model', '-m', default='ensemble', type=str, 
+                       help='Surrogate model name')
+    parser.add_argument('--verifi_model', '-vm', default='ensemble', type=str,
+                       help='Victim model name')
+    parser.add_argument('--dataset', '-d', default='sirinam95', type=str,
+                       help='Dataset name')
     args = parser.parse_args()
 
     s_model = args.model
     v_model = args.verifi_model
     dataset = args.dataset
     config = ConfigObj("../DLWF_pytorch/My_tor.conf")
-    set_seed(args.seed)  # ✅ 固定随机种子
-
-    for i in range(args.start_patch,args.end_patch):
-        main(i)
-
+    
+    # profiler=Profiler()
+    # profiler.start()
+    
+    # for i in range(4,9):
+    #     main(i)
+    for alpha in range(0,10):
+        main(6,alpha/10)
+    # profiler.stop()

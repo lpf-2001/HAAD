@@ -11,16 +11,15 @@ from configobj import ConfigObj
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
-# 将项目根加入路径（按你原来写法）
+# 将项目根加入路径
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.append(parent_dir)
 project_root = os.getcwd()
 os.chdir(project_root)
 sys.path.append(project_root)
 
-# 你的项目内工具
-from utils.data import LoadDataNoDefCW, load_rimmer_dataset  # 确保这些函数/类存在
-from DLWF_pytorch.train_utils import build_model_instance,split_alpha_number,set_seed  # 假设这个函数存在并可用
+from utils.data import LoadDataNoDefCW, load_rimmer_dataset  
+from DLWF_pytorch.train_utils import build_model_instance,split_alpha_number,set_seed 
 
 set_seed(2025)
 # ==========================
@@ -58,7 +57,7 @@ def evaluate(loader):
 def round_up(n, digits=0):
     return Decimal(str(n)).quantize(Decimal('1e-{0}'.format(digits)), rounding=ROUND_HALF_UP)
 
-# DFD 插包攻击函数（保持你原逻辑）
+# DFD 插包攻击函数
 def DFDall(original_sequence, up_disturbance_rate, down_disturbance_rate):
     burst_len = []
     # 防止输入为空或第一个元素不是有效包，做个保护
@@ -105,7 +104,6 @@ if dataname == "sirinam":
 elif dataname == "rimmer":
     X_train, y_train, X_open, y_open, x_test, y_test = load_rimmer_dataset(input_size=seq_len, num_classes=num_classes, test_ratio=0.25, val_ratio=0.25)
 
-    print(f"x_test.shape: {np.shape(x_test)}")  # 方便调试
 
 inject_sum = 0
 disturbed_X = []
@@ -122,13 +120,11 @@ for i, sequence in enumerate(x_test):
     disturbed_X.append(disturbed_sequence)
         
     
-# 现在可以安全转换为 numpy 数组
-disturbed_X = np.array(disturbed_X, dtype=np.float32)  # shape (N, seq_len)
-
+# 转换为 numpy 数组
+disturbed_X = np.array(disturbed_X, dtype=np.float32) 
 # 确保 x_test 是 numpy 并具有正确维度 (N, seq_len) 或 (N, seq_len, 1)
 x_test = np.array(x_test, dtype=np.float32)
 if x_test.ndim == 3 and x_test.shape[2] == 1:
-    # (N, seq_len, 1) - 保持不变
     pass
 elif x_test.ndim == 2:
     # (N, seq_len) -> 添加 channel 维
@@ -157,8 +153,8 @@ y_test_tensor = torch.tensor(y_test, dtype=torch.long)
 test_loader = DataLoader(TensorDataset(x_test_tensor, y_test_tensor), batch_size=batch_size, shuffle=False)
 adv_loader = DataLoader(TensorDataset(disturbed_X_tensor, y_test_tensor), batch_size=batch_size, shuffle=False)
 
-model_path = f'/home/xuke/lpf/HAAD/utils/trained_model/{dataset}/{model_name}.pkl'  # 你原来路径样式，请根据实际路径修改
-config = ConfigObj('../DLWF_pytorch/My_tor.conf')  # 假设你有 Config 类
+model_path = f'/home/xuke/lpf/HAAD/utils/trained_model/{dataset}/{model_name}.pkl' 
+config = ConfigObj('../DLWF_pytorch/My_tor.conf')  
 learn_param = config[model_name]
 model = build_model_instance(model_name, dataset, config=learn_param).to(device)
 state = torch.load(model_path, map_location=device)
@@ -171,7 +167,7 @@ model.eval()
 cur_result, real_result = evaluate(test_loader)
 adv_result, _ = evaluate(adv_loader)
 
-# 计算指标（处理一下 division by zero 的情况）
+# 计算指标
 if len(real_result) == 0:
     raise RuntimeError("Empty real_result: check your test_loader and y_test.")
 

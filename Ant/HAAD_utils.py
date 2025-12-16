@@ -1,11 +1,6 @@
 import re
 from model import *
 import os
-from configobj import ConfigObj
-import argparse
-import re
-from model import *
-import os
 
 
 
@@ -115,23 +110,3 @@ def build_model_instance(model_type, dataset, config):   #模型类型“ensembl
     else:
         raise ValueError(f"Unknown model type: {model_type}")
     
-    
-    
-def get_args():
-    parser = argparse.ArgumentParser(
-        description='Universal Perturbation with Conflict Detection'
-    )
-    parser.add_argument('--model', '-m', default='ensemble', type=str, 
-                       help='Surrogate model name')
-    parser.add_argument('--verifi_model', '-vm', default='ensemble', type=str,
-                       help='Victim model name')
-    parser.add_argument('--dataset', '-d', default='sirinam95', type=str,
-                       help='Dataset name')
-    parser.add_argument('--start_patch','-ps', default=5, type=int,
-                        help='Patch number starting value')
-    parser.add_argument('--end_patch', 'pe', default=9, type=int,
-                        help='Patch number ending value')
-    parser.add_argument('--seed','-s', default=2025, type=int,
-                        help='Random seed')
-
-    return parser.parse_args()
