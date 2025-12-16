@@ -1,19 +1,20 @@
 
 ## Project Structure
 
+```text
 HAAD/
-├── Ant/ # Ant Colony Optimization-based perturbation generation (HAAD core)
-├── BLANKET/ # BLANKET defense implementation
-├── DFD/ # Deep Fingerprinting Defense (DFD) baseline
-├── DLWF_pytorch/ # Deep learning-based website fingerprinting models (PyTorch)
-├── minipatch/ # MiniPatch defense baseline
-├── newBaseline/ # Newly implemented baseline methods
-├── OpenWorld/ # Open-world WF evaluation scripts
-├── deployment/ # Real-world deployment and online defense implementation
-├── utils/ # Common utilities and helper functions
-├── experimental/ # Temporary / experimental scripts (to be organized)
-└── README.md # Project documentation
-
+├── Ant/                # Ant Colony Optimization-based perturbation generation (HAAD core)
+├── BLANKET/            # BLANKET defense implementation
+├── DFD/                # Deep Fingerprinting Defense (DFD) baseline
+├── DLWF_pytorch/       # Deep learning-based website fingerprinting models (PyTorch)
+├── minipatch/          # MiniPatch defense baseline
+├── newBaseline/        # Newly implemented baseline methods
+├── OpenWorld/          # Open-world WF evaluation scripts
+├── deployment/         # Real-world deployment and online defense implementation
+├── utils/              # Common utilities and helper functions
+├── experimental/       # Temporary / experimental scripts
+└── README.md           # Project documentation
+```
 
 ## Workflow Overview
 
